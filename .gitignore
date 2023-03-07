@@ -1,2 +1,10 @@
 OdorSeqPython.code-workspace
 .vscode/launch.json
+.idea/misc.xml
+.idea/vcs.xml
+modules.xml
+OdorSeqPython.iml
+profiles_settings.xml
+__pycache__/*.pyc
+__pycache__/model.cpython-38.pyc
+*.pyc

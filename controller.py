@@ -1,10 +1,7 @@
-class FlowDataController:
-
+class ValveController:
     def __init__(self, model):
         self.model = model
 
-    def get_flow(self):
-        return self.model.read_flow()
-
-    def get_flow_history(self, num_samples):
-        return self.model.get_flow_history(num_samples)
+    def set_valve_states(self, front_valve_states, back_valve_states):
+        trace = self.model.set_valve_states(front_valve_states, back_valve_states)
+        return trace

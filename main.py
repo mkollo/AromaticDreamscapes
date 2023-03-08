@@ -11,5 +11,5 @@ controller = ValveController(model)
 view = FlowDataView(controller)
 
 view.show()
-
+ 
 sys.exit(app.exec_())

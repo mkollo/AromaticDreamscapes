@@ -1,5 +1,5 @@
 import time
-from PyQt5.QtWidgets import QMainWindow, QFrame, QVBoxLayout, QPushButton, QProgressBar
+from PyQt5.QtWidgets import QMainWindow, QFrame, QVBoxLayout, QPushButton, QProgressBar, QLabel, QGroupBox
 from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QPen
@@ -20,6 +20,12 @@ class FlowDataView(QMainWindow):
         self.flow_chart = QChart()
         self.flow_back_series = QLineSeries()
         self.flow_front_series = QLineSeries()
+        self.flow_back_series.setName("Back")
+        self.flow_front_series.setName("Front")
+        self.flow_chart.legend().setVisible(True)
+        self.flow_chart.legend().setAlignment(Qt.AlignBottom)
+        self.flow_chart_view = QChartView(self.flow_chart)
+        self.flow_chart_view.setRenderHint(QPainter.Antialiasing)
         zeroline = QLineSeries()
         zeroline.append(QPointF(0, 0))
         zeroline.append(QPointF(5, 0))
@@ -30,7 +36,6 @@ class FlowDataView(QMainWindow):
         self.flow_chart.addSeries(self.flow_back_series)
         self.flow_chart.addSeries(self.flow_front_series)
         self.flow_chart.createDefaultAxes()
-        self.flow_chart.setTitle('Flow Signal')
         self.flow_chart.legend().hide()
         self.flow_chart.axes(Qt.Horizontal)[
             0].setLabelsFont(QFont("Arial", 14))
@@ -44,25 +49,38 @@ class FlowDataView(QMainWindow):
         layout = QVBoxLayout()
         layout.addWidget(self.flow_chart_view)
 
-        self.setWindowTitle('Flow Signal Chart')
+        self.setWindowTitle('Odour Playlist Composer')
         self.setGeometry(100, 100, 800, 600)
         self.progress_bar = QProgressBar()
+        self.progress_label = QLabel("")
+        group_box = QGroupBox("Current pulse")
+        group_box_layout = QVBoxLayout()
+        group_box_layout.addWidget(self.progress_label)
+        group_box_layout.addWidget(self.progress_bar)
+        group_box.setLayout(group_box_layout)
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
-        layout.addWidget(self.progress_bar)
-       
+        layout.addWidget(group_box)
+      
         self.sequence_complete.connect(self.update_flow_chart)
-
         main_frame = QFrame()
         main_frame.setLayout(layout)
         self.setCentralWidget(main_frame)
 
         self.start_button = QPushButton("Start")
-        # self.start_button.clicked.connect(self.run_test_sequence)
+        self.start_button.clicked.connect(self.run_next_sequence)
         layout.addWidget(self.start_button)
-        self.run_sequence([3, 4], [0.5, 0.5], "TEST")
+        self.run_next_sequence()
 
-    def run_sequence(self, odour_valves=[], duty_cycles=[], label="RESET"):
+    def run_next_sequence(self):
+        self.run_sequence(self.controller.get_next_sequence())
+
+    def run_sequence(self, params):
+        odour_valves=params['valves']
+        duty_cycles=params['duty_cycles']
+        label=params['label']
+
+        self.progress_label.setText(label)
         self.work_thread = QThread()
         self.progress_thread = QThread()
         self.worker = PlayValveSequenceWorker(self.controller, odour_valves, duty_cycles, label)
@@ -75,7 +93,7 @@ class FlowDataView(QMainWindow):
         self.progress_worker.finished.connect(self.progress_thread.quit)
 
         self.worker.result.connect(self.sequence_complete.emit)
-        self.work_thread.finished.connect(self.work_thread.deleteLater)
+        self.worker.finished.connect(self.work_thread.quit)
         self.start_button.setEnabled(False)
         self.work_thread.started.connect(self.worker.run)
         self.progress_thread.started.connect(self.progress_worker.run)
@@ -102,9 +120,9 @@ class FlowDataView(QMainWindow):
         self.progress_bar.setValue(100)
         self.start_button.setEnabled(True)
 
-
 class PlayValveSequenceWorker(QObject):
     result = pyqtSignal(np.ndarray)
+    finished = pyqtSignal()
 
     def __init__(self, controller, odour_valves, duty_cycles, label):
         super().__init__()
@@ -117,6 +135,8 @@ class PlayValveSequenceWorker(QObject):
         trace = self.controller.play_valve_sequence(
             self.odour_valves, self.duty_cycles, self.label)
         self.result.emit(trace)
+        self.finished.emit()
+
 
 class ProgressWorker(QObject):
     progress = pyqtSignal(int)

@@ -9,3 +9,9 @@ class OdourSeqController:
     def play_valve_sequence(self, odour_valves, duty_cycles, label):
         traces = self.valve_model.play_valve_sequence(odour_valves, duty_cycles, label)
         return traces
+
+    def get_next_sequence(self):
+        return self.sequence_model.pop_next_sequence()
+
+    def get_current_sequence(self):
+        return self.sequence_model.current_sequence

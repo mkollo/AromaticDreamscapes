@@ -61,4 +61,7 @@ class ValveModel:
         self.valves.start()
         traces = self.ai.read(number_of_samples_per_channel=self.acquisition_samples)
         self.valves.wait_until_done(timeout=20)
+        self.valves.stop()
+        self.valves.out_stream.regen_mode = nidaqmx.constants.RegenerationMode.DONT_ALLOW_REGENERATION
+        self.valves.out_stream.regen_mode = nidaqmx.constants.RegenerationMode.ALLOW_REGENERATION
         return np.array(traces) * 0.8949 - 1.1644

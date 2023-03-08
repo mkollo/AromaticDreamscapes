@@ -51,10 +51,10 @@ class FlowDataView(QMainWindow):
         self.default_state()
 
     def run_test_sequence(self):
-        trace = self.controller.reset_valve_states([2, 4, 14], [0.4, 0.6, 0.5], "test")
+        trace = self.controller.play_valve_sequence([2, 4, 14], [0.4, 0.6, 0.5], "test")
 
     def default_state(self):
-        trace = self.controller.reset_valve_states()
+        trace = self.controller.play_valve_sequence()
         x_data = np.arange(trace.shape[1]) / self.controller.get_sampling_rate()
         y_data_back = trace[0, :]
         y_data_front = trace[1, :]

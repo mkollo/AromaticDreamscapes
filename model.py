@@ -53,7 +53,7 @@ class ValveModel:
         valve_states[32, ttl_pattern] = 1
         return valve_states.astype(bool)
 
-    def play_sequence(self, odour_valves=[], duty_cycles=[], label="RESET"):
+    def play_valve_sequence(self, odour_valves, duty_cycles, label):
         valve_states = self.generate_valve_pattern(odour_valves, duty_cycles, label=label)
         self.valves.write(valve_states)
         self.valves.start()

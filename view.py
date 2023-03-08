@@ -40,7 +40,7 @@ class FlowDataView(QMainWindow):
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.start_valve_states)
         layout.addWidget(self.start_button)
-        trace = self.controller.set_default_valve_states()
+        self.start_valve_states()
         self.flow_series.clear()
         for i, value in enumerate(trace):
             self.flow_series.append(QPointF(i, value[0]))

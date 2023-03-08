@@ -8,6 +8,7 @@ profiles_settings.xml
 __pycache__/*.pyc
 **/*.pyc
 */*.__pycache__
+.conda
+__pycache__/*
+.gitignore
 __pycache__/controller.cpython-38.pyc
-.gitignore
-.gitignore

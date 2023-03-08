@@ -39,20 +39,23 @@ class FlowDataView(QMainWindow):
         self.setCentralWidget(main_frame)
 
         self.start_button = QPushButton("Start")
-        self.start_button.clicked.connect(self.start_valve_states)
+        self.start_button.clicked.connect(self.run_test_sequence)
         layout.addWidget(self.start_button)
-        self.start_valve_states()
-        self.flow_series.clear()
-        for i, value in enumerate(trace):
-            self.flow_series.append(QPointF(i, value[0]))
-        self.update_flow_chart()
+        self.default_state()
 
-    def start_valve_states(self):
+    def run_test_sequence(self):
+        trace = self.controller.reset_valve_states([2, 4, 14], [0.4, 0.6, 0.5], "test")
+
+    def default_state(self):
         trace = self.controller.reset_valve_states()
-        self.flow_series.clear()
-        for i, value in enumerate(trace):
-            self.flow_series.append(i, value)
-        self.update_flow_chart()
+
+        print(len(trace))
+        print(type(trace[0]))
+
+        # self.flow_series.clear()
+        # for i, value in enumerate(trace):
+        #     self.flow_series.append(i, value)
+        # self.update_flow_chart()
 
     def update_flow_chart(self):
         flow_data = np.array([p.y() for p in self.flow_series.pointsVector()])

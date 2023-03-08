@@ -15,7 +15,6 @@ class ValveModel:
         self.all_clean_air_valves = [0, 1, 8, 9]
         self.valves = nidaqmx.Task()
         self.ai = nidaqmx.Task()
-        self.ttl = nidaqmx.Task()
 
         self.valves.do_channels.add_do_chan("Front_valves/port0/line0:15, Back_valves/port0/line0:7, Back_valves/port0/line16:23, Front_valves/port0/line16", line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
         self.ai.ai_channels.add_ai_voltage_chan("AI/ai0, AI/ai1")
@@ -52,10 +51,11 @@ class ValveModel:
         true_indices = np.hstack([0, true_indices])
         ttl_pattern = (true_indices[:, None] * self.ttl_bit_samples + np.arange(self.ttl_bit_samples)).ravel() + self.pre_sequence_samples
         valve_states[32, ttl_pattern] = 1
-        return valve_states
+        return valve_states.astype(bool)
 
     def play_sequence(self, odour_valves=[], duty_cycles=[], label="RESET"):
-        self.valves.write(self.generate_valve_pattern(odour_valves, duty_cycles, label=label))
+        valve_states = self.generate_valve_pattern(odour_valves, duty_cycles, label=label)
+        self.valves.write(valve_states)
         self.valves.start()
         self.valves.wait_until_done(timeout=20)
-        return self.ai.read(number_of_samples_per_channel=self.acquisition_length * self.sample_rate)
+        return self.ai.read(number_of_samples_per_channel=self.acquisition_samples)

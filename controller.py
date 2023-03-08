@@ -13,3 +13,6 @@ class ValveController:
     def reset_valve_states(self):
         trace = self.model.play_sequence()
         return trace
+
+    def get_sampling_rate(self):
+        return self.model.sample_rate

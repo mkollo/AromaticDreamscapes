@@ -4,7 +4,7 @@ import numpy as np
 
 
 class ValveModel:
-    def __init__(self, sample_rate=10000, acquisition_time=5, pre_sequence_time=0, post_sequence_time=0.5, pulse_time=1):
+    def __init__(self, sample_rate=10000, acquisition_time=2, pre_sequence_time=0, post_sequence_time=0.5, pulse_time=1):
         self.sample_rate = sample_rate
         self.acquisition_samples = int(acquisition_time * self.sample_rate)
         self.pre_sequence_samples = int(pre_sequence_time * self.sample_rate)
@@ -58,4 +58,4 @@ class ValveModel:
         self.valves.write(valve_states)
         self.valves.start()
         self.valves.wait_until_done(timeout=20)
-        return self.ai.read(number_of_samples_per_channel=self.acquisition_samples)
+        return np.array(self.ai.read(number_of_samples_per_channel=self.acquisition_samples)) * 0.8949 - 1.1644

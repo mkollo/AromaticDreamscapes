@@ -13,7 +13,8 @@ class ValveModel:
         self.pulse_samples = int(pulse_time * self.sample_rate)
         self.cycle_samples = int(0.004 * self.sample_rate)
         self.ttl_bit_samples = int(0.004 * self.sample_rate)
-        self.all_clean_air_valves = [0, 1, 8, 9]        
+        self.all_clean_air_valves = [0, 1]
+    
         self.valves = nidaqmx.Task()
         self.ai = nidaqmx.Task()
 

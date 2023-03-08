@@ -124,7 +124,6 @@ class ProgressWorker(QObject):
 
     def __init__(self):
         super().__init__()
-        print("starting progress worker")
 
     def run(self):
         for i in range(100):

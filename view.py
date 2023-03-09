@@ -1,10 +1,10 @@
 import time
 from PyQt5.QtWidgets import QMainWindow, QFrame, QVBoxLayout, QPushButton, QProgressBar, QLabel, QGroupBox
-from PyQt5.QtChart import QChart, QChartView, QLineSeries
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QPen
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal
 import numpy as np
+
+from flow_chart import FlowChart
 
 
 class FlowDataView(QMainWindow):
@@ -15,39 +15,10 @@ class FlowDataView(QMainWindow):
         super().__init__()
         self.controller = controller
 
-        self.min_value = -0.2
-        self.max_value = 2
-        self.flow_chart = QChart()
-        self.flow_back_series = QLineSeries()
-        self.flow_front_series = QLineSeries()
-        self.flow_back_series.setName("Back")
-        self.flow_front_series.setName("Front")
-        self.flow_chart.legend().setVisible(True)
-        self.flow_chart.legend().setAlignment(Qt.AlignBottom)
-        self.flow_chart_view = QChartView(self.flow_chart)
-        self.flow_chart_view.setRenderHint(QPainter.Antialiasing)
-        zeroline = QLineSeries()
-        zeroline.append(QPointF(0, 0))
-        zeroline.append(QPointF(5, 0))
-        zeroline.setPen(QPen(Qt.black))
-        self.flow_back_series.setPen(QPen(Qt.blue))
-        self.flow_front_series.setPen(QPen(Qt.red))
-        self.flow_chart.addSeries(zeroline)
-        self.flow_chart.addSeries(self.flow_back_series)
-        self.flow_chart.addSeries(self.flow_front_series)
-        self.flow_chart.createDefaultAxes()
-        self.flow_chart.legend().hide()
-        self.flow_chart.axes(Qt.Horizontal)[
-            0].setLabelsFont(QFont("Arial", 14))
-        self.flow_chart.axes(Qt.Vertical)[0].setLabelsFont(QFont("Arial", 14))
-        self.flow_chart_view = QChartView(self.flow_chart)
-        self.flow_chart_view.setRenderHint(QPainter.Antialiasing)
-        self.flow_chart.axes(Qt.Vertical)[0].setRange(-0.05, 0.2)
-        self.flow_chart.axes(Qt.Horizontal)[0].setRange(0, 5)
-        self.flow_chart_view.setContentsMargins(20, 20, 20, 20)
-
+        self.flow_chart = FlowChart(controller.get_sampling_rate())
+        
         layout = QVBoxLayout()
-        layout.addWidget(self.flow_chart_view)
+        layout.addWidget(self.flow_chart.flow_chart_view)
 
         self.setWindowTitle('Odour Playlist Composer')
         self.setGeometry(100, 100, 800, 600)
@@ -62,12 +33,12 @@ class FlowDataView(QMainWindow):
         self.progress_bar.setMaximum(100)
         layout.addWidget(group_box)
       
-        self.sequence_complete.connect(self.update_flow_chart)
+        self.sequence_complete.connect(self.flow_chart.update)
         main_frame = QFrame()
         main_frame.setLayout(layout)
         self.setCentralWidget(main_frame)
 
-        self.start_button = QPushButton("Start")
+        self.start_button = QPushButton("Play " + self.controller.get_current_sequence()['label'])
         self.start_button.clicked.connect(self.run_next_sequence)
         layout.addWidget(self.start_button)
         self.run_next_sequence()
@@ -102,20 +73,7 @@ class FlowDataView(QMainWindow):
         self.work_thread.start()
         self.progress_thread.start()
 
-    def update_flow_chart(self, trace):
-        x_data = np.arange(trace.shape[1]) / \
-            self.controller.get_sampling_rate()
-        y_data_back = trace[0, :]
-        y_data_front = trace[1, :]
-        points_back = [QPointF(x, y) for x, y in zip(x_data, y_data_back)]
-        points_front = [QPointF(x, y) for x, y in zip(x_data, y_data_front)]
-        self.flow_back_series.replace(points_back)
-        self.flow_front_series.replace(points_front)
-        self.min_value = np.min([self.min_value, np.min(trace) * 1.5])
-        self.max_value = np.max([self.max_value, np.max(trace) * 1.25])
-        self.flow_chart.axes(Qt.Vertical)[0].setRange(
-            self.min_value, self.max_value)
-
+ 
     def update_finished_progress_bar(self):
         self.progress_bar.setValue(100)
         self.start_button.setEnabled(True)

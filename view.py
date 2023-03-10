@@ -1,8 +1,9 @@
-from PyQt5.QtWidgets import QMainWindow, QFrame, QVBoxLayout, QPushButton
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtWidgets import QMainWindow, QFrame, QGridLayout, QPushButton
+from PyQt5.QtCore import  QThread, pyqtSignal
 import numpy as np
 
 from flow_chart import FlowChart
+from base_list import BaseListWidget
 from sequence_monitor import SequenceMonitor, SequenceProgressWorker
 from play_valve_sequence_worker import PlayValveSequenceWorker
 
@@ -15,20 +16,24 @@ class FlowDataView(QMainWindow):
         self.controller = controller
         self.setWindowTitle('Odour Playlist Composer')
         self.setGeometry(100, 100, 800, 600)
-        layout = QVBoxLayout()
-        self.flow_chart = FlowChart(controller.get_sampling_rate())
-        layout.addWidget(self.flow_chart.flow_chart_view)
-        self.sequence_monitor = SequenceMonitor()
-        layout.addWidget(self.sequence_monitor)
+        layout = QGridLayout()
 
-        self.start_button = QPushButton("Play " + self.controller.get_current_sequence()['label'])
-        self.start_button.clicked.connect(self.run_next_sequence)
-        layout.addWidget(self.start_button)
+        self.flow_chart = FlowChart(controller.get_sampling_rate())        
+        self.sequence_monitor = SequenceMonitor()        
+        self.start_button = QPushButton("Play next:  " + self.controller.get_current_sequence()['label'])
+        self.start_button.clicked.connect(self.run_next_sequence)        
+        self.sequence_complete.connect(self.flow_chart.update)
+
+        self.sequence_list = BaseListWidget()
 
         main_frame = QFrame()
         main_frame.setLayout(layout)
         self.setCentralWidget(main_frame)
-        self.sequence_complete.connect(self.flow_chart.update)
+        layout.addWidget(self.flow_chart.flow_chart_view, 0, 0)
+        layout.addWidget(self.sequence_monitor, 1, 0)
+        layout.addWidget(self.start_button, 2, 0)
+        layout.addWidget(self.sequence_list, 0, 1, 3, 1)
+
 
         self.run_next_sequence()
 

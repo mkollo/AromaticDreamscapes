@@ -4,6 +4,7 @@ import numpy as np
 
 from flow_chart import FlowChart
 from base_list import BaseListWidget
+from pid_chart import PidChart
 from sequence_monitor import SequenceMonitor, SequenceProgressWorker
 from play_valve_sequence_worker import PlayValveSequenceWorker
 
@@ -16,24 +17,30 @@ class FlowDataView(QMainWindow):
         self.controller = controller
         self.setWindowTitle('Odour Playlist Composer')
         self.setGeometry(100, 100, 800, 600)
-        layout = QGridLayout()
 
-        self.flow_chart = FlowChart(controller.get_sampling_rate())        
+        self.flow_chart = FlowChart(controller.get_sampling_rate())
+        self.pid_chart = PidChart(controller.get_sampling_rate())
         self.sequence_monitor = SequenceMonitor()        
         self.start_button = QPushButton("Play next:  " + self.controller.get_current_sequence()['label'])
         self.start_button.clicked.connect(self.run_next_sequence)        
         self.sequence_complete.connect(self.flow_chart.update)
+        self.sequence_complete.connect(self.pid_chart.update)
+        self.sequence_monitor.layout.addWidget(self.start_button, 0, 3, 1, 2)
 
-        self.sequence_list = BaseListWidget()
+        # self.sequence_list = BaseListWidget()
 
         main_frame = QFrame()
+        layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)
         self.setCentralWidget(main_frame)
-        layout.addWidget(self.flow_chart.flow_chart_view, 0, 0)
-        layout.addWidget(self.sequence_monitor, 1, 0)
-        layout.addWidget(self.start_button, 2, 0)
-        layout.addWidget(self.sequence_list, 0, 1, 3, 1)
+        layout.addWidget(self.flow_chart, 0, 0, 3, 1)
+        layout.addWidget(self.pid_chart, 3, 0, 3, 1)
+        layout.addWidget(self.sequence_monitor, 6, 0, 1, 1)
+        # layout.addWidget(self.sequence_list, 0, 1, 3, 1)
 
+        self.flow_chart.setMouseTracking(True)
+        self.pid_chart.setMouseTracking(True)
+        self.sequence_monitor.setMouseTracking(True)
 
         self.run_next_sequence()
 

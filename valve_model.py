@@ -19,7 +19,7 @@ class ValveModel:
         self.ai = nidaqmx.Task()
 
         self.valves.do_channels.add_do_chan("Front_valves/port0/line0:15, Back_valves/port0/line0:7, Back_valves/port0/line16:23, Front_valves/port0/line16", line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
-        self.ai.ai_channels.add_ai_voltage_chan("AI/ai0, AI/ai1")
+        self.ai.ai_channels.add_ai_voltage_chan("AI/ai0, AI/ai1, AI/ai2")
 
         self.init_clock_and_trigger(self.valves)
         self.init_clock_and_trigger(self.ai)

@@ -1,40 +1,28 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtChart import QChart, QChartView, QLineSeries
-from PyQt5.QtGui import QPainter, QFont, QPen
+from PyQt5.QtGui import QPainter, QFont, QPen, QColor
 from PyQt5.QtCore import QPointF
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 import numpy as np
 
 
-class FlowChart(QWidget):
+class PidChart(QWidget):
 
     def __init__(self, sampling_rate):
         super().__init__()
         self.chart = QChart()
-        self.back_series = QLineSeries()
-        self.front_series = QLineSeries()
-        self.back_series.setName("Back")
-        self.front_series.setName("Front")
-        self.chart.legend().setVisible(True)
-        self.chart.legend().setAlignment(Qt.AlignBottom)
+        self.pid_series = QLineSeries()
+        self.pid_series.setName("MiniPID signal")
+        self.chart.legend().setVisible(False)
         self.chart_view = QChartView(self.chart)
         self.chart_view.setRenderHint(QPainter.Antialiasing)
         self.min_value = -0.2
         self.max_value = 2
 
-        zeroline = QLineSeries()
-        zeroline.append(QPointF(0, 0))
-        zeroline.append(QPointF(5, 0))
-        zeroline.setPen(QPen(Qt.black))
-
-        self.back_series.setPen(QPen(Qt.blue))
-        self.front_series.setPen(QPen(Qt.red))
-        self.chart.addSeries(zeroline)
-        self.chart.addSeries(self.back_series)
-        self.chart.addSeries(self.front_series)
+        self.pid_series.setPen(QPen(QColor(255, 165, 0)))
+        self.chart.addSeries(self.pid_series)
         self.chart.createDefaultAxes()
         self.chart.legend().show()
-        self.chart.legend().markers(zeroline)[0].setVisible(False)
         self.chart.axes(Qt.Horizontal)[0].setLabelsFont(QFont("Arial", 10))
         self.chart.axes(Qt.Vertical)[0].setLabelsFont(QFont("Arial", 10))
         self.flow_chart_view = QChartView(self.chart)
@@ -44,7 +32,7 @@ class FlowChart(QWidget):
         self.flow_chart_view.setContentsMargins(20, 20, 20, 20)
 
         self.chart.axes(Qt.Horizontal)[0].setTitleText("Time (s)")
-        self.chart.axes(Qt.Vertical)[0].setTitleText("Flow (l/min)")
+        self.chart.axes(Qt.Vertical)[0].setTitleText("MiniPID value")
         self.sampling_rate = sampling_rate
 
         # Set up layout
@@ -54,14 +42,11 @@ class FlowChart(QWidget):
 
     def update(self, trace):
         x_data = np.arange(trace.shape[1]) / self.sampling_rate
-        y_data_back = trace[0, :]
-        y_data_front = trace[1, :]
-        points_back = [QPointF(x, y) for x, y in zip(x_data, y_data_back)]
-        points_front = [QPointF(x, y) for x, y in zip(x_data, y_data_front)]
-        self.back_series.replace(points_back)
-        self.front_series.replace(points_front)
-        self.min_value = np.min([self.min_value, np.min(trace[:2,:]) * 1.5])
-        self.max_value = np.max([self.max_value, np.max(trace[:2,:]) * 1.25])
+        y_data_pid = trace[2, :]
+        points_pid = [QPointF(x, y) for x, y in zip(x_data, y_data_pid)]
+        self.pid_series.replace(points_pid)
+        self.min_value = np.min([self.min_value, np.min(trace) * 1.5])
+        self.max_value = np.max([self.max_value, np.max(trace) * 1.25])
         self.chart.axes(Qt.Vertical)[0].setRange(self.min_value, self.max_value)
 
     def set_min_value(self, min_value):

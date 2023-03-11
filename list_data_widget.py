@@ -58,10 +58,11 @@ class ListDataWidget(QWidget):
                 reader = csv.DictReader(f, delimiter='\t')
                 reply = QMessageBox.question(self, 'Table overwrite', 'Are you sure you want overwrite the "' + self.title + '" table?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
-                    for i in range(self.base_list.rowCount()):
-                        self.base_list.remove_row(i)
+                    self.base_list.setRowCount(0)
+                    self.selected_row = None
+                    self.data = None
                     for row in reader:                        
-                        self.base_list.add_row(row)
+                        self.base_list.add_row(row.values())
                     else:
                         pass
 

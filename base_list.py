@@ -76,12 +76,19 @@ class BaseListWidget(QTableWidget):
         for row in data:
             self.add_row(list(row.values()))
 
+    def add_row(self, row_data):
+        i_row = self.rowCount()
+        self.insertRow(i_row)        
+        for i_col, value in enumerate(row_data):           
+            item = QTableWidgetItem(str(value))
+            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            self.setItem(i_row, i_col, item)
 
     def select_row(self, row):
         self.selectRow(row)
         self.selected_row = row
 
-    def remove_row(self, row):
+    def remove_row_data(self, row):
         if row >= 0 and row < self.rowCount():
             self.removeRow(row)
             self.setRowCount(self.rowCount() - 1)
@@ -98,7 +105,7 @@ class BaseListWidget(QTableWidget):
                 row_data.append('')
         return row_data
 
-    def insert_row(self, row_index, row_data=None):
+    def insert_row_data(self, row_index, row_data=None):
         self.insertRow(row_index)
         self.setRowCount(self.rowCount()+1)
         if row_data is not None:
@@ -119,8 +126,8 @@ class BaseListWidget(QTableWidget):
         if row < 1:
             return
         new_row = row - 1
-        self.insert_row(new_row, self.get_row_data(row))
-        self.remove_row(row + 1)
+        self.insert_row_data(new_row, self.get_row_data(row))
+        self.remove_row_data(row + 1)
         self.select_row(new_row)
         self.selected_row = new_row
 
@@ -129,22 +136,13 @@ class BaseListWidget(QTableWidget):
         if row >= self.rowCount() - 1:
             return
         new_row = row + 2
-        self.insert_row(new_row, self.get_row_data(row))
-        self.remove_row(row)
+        self.insert_row_data(new_row, self.get_row_data(row))
+        self.remove_row_data(row)
         self.select_row(new_row - 1)
         self.selected_row = new_row - 1
 
     def get_selected_row(self):
         return self.selected_row
-
-    def add_row(self, row_data):
-        row = self.rowCount()
-        self.insertRow(row)
-        self.setRowCount(row+1)
-        for col, value in enumerate(row_data):
-            item = QTableWidgetItem(str(value))
-            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            self.setItem(row, col, item)
 
     def _get_widget(self):
         widget = QWidget()

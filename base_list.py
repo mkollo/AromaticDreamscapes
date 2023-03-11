@@ -9,10 +9,11 @@ selected_hover_color = "#D4E8EF"
 class BaseListWidget(QTableWidget):
     row_clicked = pyqtSignal(int)
 
-    def __init__(self, headers, callback, parent=None):
+    def __init__(self, headers, select_callback, parent=None):
         super().__init__(parent)
         self.selected_row = None
-        
+        self.data = None
+
         self.original_palette = QPalette()
         self.original_palette.setColor(QPalette.Base, QColor("#FFFFFF"))
         self.original_palette.setColor(QPalette.Window, QColor("#C6D9F1"))
@@ -67,11 +68,70 @@ class BaseListWidget(QTableWidget):
         self.hover_row = -1  # Added to track the currently hovered row
         self.mouse_pos = None  # Added to track the current mouse position
 
-        self.row_clicked.connect(lambda row: callback(row))
+        self.row_clicked.connect(lambda row: select_callback(row))
 
     def add_data(self, data):
+        self.data = data
         for row in data:
             self.add_row(list(row.values()))
+
+
+    def select_row(self, row):
+        self.selectRow(row)
+        self.selected_row = row
+
+    def remove_row(self, row):
+        if row >= 0 and row < self.rowCount():
+            self.removeRow(row)
+            self.setRowCount(self.rowCount() - 1)
+            if row == self.selected_row:
+                self.selected_row = None
+
+    def get_row_data(self, row_index):
+        row_data = []
+        for col in range(self.columnCount()):
+            item = self.item(row_index, col)
+            if item is not None:
+                row_data.append(item.text())
+            else:
+                row_data.append('')
+        return row_data
+
+    def insert_row(self, row_index, row_data=None):
+        self.insertRow(row_index)
+        self.setRowCount(self.rowCount()+1)
+        if row_data is not None:
+            for col, value in enumerate(row_data):
+                item = QTableWidgetItem(str(value))
+                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                self.setItem(row_index, col, item)
+        else:
+            for col in range(self.columnCount()):
+                item = QTableWidgetItem("")
+                item.setFlags(Qt.ItemIsEnabled | Qt.NoItemFlags)
+                item.setBackground(QColor("#FFFFFF"))
+                self.setItem(row_index, col, item)
+                self.setCellWidget(row_index, col, self._get_widget())
+
+    def move_selected_item_up(self):
+        row = self.selected_row
+        if row < 1:
+            return
+        new_row = row - 1
+        self.insert_row(new_row, self.get_row_data(row))
+        self.remove_row(row + 1)
+        self.select_row(new_row)
+        self.selected_row = new_row
+
+    def move_selected_item_down(self):
+        row = self.selected_row
+        if row >= self.rowCount() - 1:
+            return
+        new_row = row + 2
+        self.insert_row(new_row, self.get_row_data(row))
+        self.remove_row(row)
+        self.select_row(new_row - 1)
+        self.selected_row = new_row - 1
 
     def get_selected_row(self):
         return self.selected_row

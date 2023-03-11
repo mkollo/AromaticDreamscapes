@@ -16,7 +16,7 @@ class FlowDataView(QMainWindow):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
-        self.setWindowTitle('Odour Playlist Composer')
+        self.setWindowTitle('Aromatic Dreamscapes')
         self.setGeometry(100, 100, 800, 600)
 
         self.flow_chart = FlowChart(controller.get_sampling_rate())

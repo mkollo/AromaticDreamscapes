@@ -13,8 +13,7 @@ class OdourChemicalWidget(ListDataWidget):
         ignore_buttons = ["plus", "minus", "up", "down", "load", "save"]
         extra_buttons = [{'icon': 'distancematrix', 'callback': lambda: self.plot_distance_matrix(
             "resources/canberra_all.csv", self.get_column(0))}, {'icon': 'pointmap', 'callback': lambda: plot_point_map("resources/canberra_all_mds.csv", self.get_column(0), self.get_column(1))}]
-        super().__init__("Odour Chemicals", headers,
-                         lambda row: print, ignore_buttons, extra_buttons)
+        super().__init__("Odour Chemicals", headers, ignore_buttons=ignore_buttons, extra_buttons=extra_buttons)
         self.odour_chemicals_file = "resources/odour_chemicals.tsv"
         self.controller = controller
         self.load_data_from_file(self.odour_chemicals_file, prompt=False)
@@ -27,9 +26,9 @@ class OdourChemicalWidget(ListDataWidget):
         im = ax.imshow(data, cmap='bwr', interpolation='nearest',
                        vmin=np.min(data), vmax=np.max(data))
         ax.set_xticks(np.arange(len(labels)))
-        ax.set_xticklabels(labels, rotation=90)
+        ax.set_xticklabels(labels, rotation=90, fontsize=8)
         ax.set_yticks(np.arange(len(labels)))
-        ax.set_yticklabels(labels)
+        ax.set_yticklabels(labels, fontsize=8)
         cbar = ax.figure.colorbar(im, ax=ax)
         canvas = FigureCanvas(fig)
         dialog = QDialog()

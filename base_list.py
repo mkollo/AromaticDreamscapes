@@ -8,8 +8,9 @@ selected_hover_color = "#D4E8EF"
 
 class BaseListWidget(QTableWidget):
     row_clicked = pyqtSignal(int)
+    row_double_clicked = pyqtSignal(int)
 
-    def __init__(self, headers, select_callback, parent=None):
+    def __init__(self, headers, select_callback, double_select_callback, parent=None):
         super().__init__(parent)
         self.selected_row = None
         self.data = []
@@ -23,16 +24,15 @@ class BaseListWidget(QTableWidget):
         self.setPalette(self.original_palette)
 
         self.setColumnCount(len(headers))
-        self.setHorizontalHeaderLabels(headers)
+        self.setHorizontalHeaderLabels([h.replace("\n", "") for h in headers])
 
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setShowGrid(True)
         self.setGridStyle(Qt.SolidLine)
         self.setAlternatingRowColors(False)        
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
-
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)   
         self.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalHeader().setMouseTracking(True)
@@ -48,6 +48,7 @@ class BaseListWidget(QTableWidget):
         self.viewport().installEventFilter(self)
 
         self.clicked.connect(self._on_row_clicked)
+        self.doubleClicked.connect(self._on_row_double_clicked)
 
         title_row = TitleItem("")       
         self.setItem(0, 0, title_row)
@@ -70,20 +71,23 @@ class BaseListWidget(QTableWidget):
         self.mouse_pos = None  # Added to track the current mouse position
 
         self.row_clicked.connect(lambda row: select_callback(row))
+        self.row_double_clicked.connect(lambda row: double_select_callback(row))
 
     def add_data(self, data):
         self.data = data
         for row in data:
             self.add_row(list(row.values()))
+        self.resizeColumnsToContents()
 
     def add_row(self, row_data):
         i_row = self.rowCount()
         self.insertRow(i_row)           
         for i_col, value in enumerate(row_data):           
-            item = QTableWidgetItem(str(value))
+            item = QTableWidgetItem(str(value).replace("\n", ""))            
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.setItem(i_row, i_col, item)
         self.data.append(row_data)
+        self.resizeColumnsToContents()
 
     def select_row(self, row):
         self.selectRow(row)
@@ -95,6 +99,7 @@ class BaseListWidget(QTableWidget):
             self.setRowCount(self.rowCount() - 1)
             if row == self.selected_row:
                 self.selected_row = None
+        self.resizeColumnsToContents()
 
     def get_row_data(self, row_index):
         row_data = []
@@ -103,7 +108,7 @@ class BaseListWidget(QTableWidget):
             if item is not None:
                 row_data.append(item.text())
             else:
-                row_data.append('')
+                row_data.append('')                
         return row_data
 
     def insert_row_data(self, row_index, row_data=None):
@@ -121,6 +126,7 @@ class BaseListWidget(QTableWidget):
                 item.setBackground(QColor("#FFFFFF"))
                 self.setItem(row_index, col, item)
                 self.setCellWidget(row_index, col, self._get_widget())
+        self.resizeColumnsToContents()
 
     def move_selected_item_up(self):
         if self.selected_row is not None:
@@ -158,6 +164,10 @@ class BaseListWidget(QTableWidget):
     def _on_row_clicked(self, index):
         self.selected_row = index.row()
         self.row_clicked.emit(index.row())
+
+    def _on_row_double_clicked(self, index):
+        self.selected_row = index.row()
+        self.row_double_clicked.emit(index.row())
 
     def mouseMoveEvent(self, event):
         self.mouse_pos = event.pos()  # Update mouse position

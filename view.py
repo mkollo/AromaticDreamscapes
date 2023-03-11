@@ -3,6 +3,7 @@ from PyQt5.QtCore import  QThread, pyqtSignal
 import numpy as np
 
 from flow_chart import FlowChart
+from odour_bottle_widget import OdourBottleWidget
 from odour_chemical_widget import OdourChemicalWidget
 from pid_chart import PidChart
 from sequence_monitor import SequenceMonitor, SequenceProgressWorker
@@ -27,6 +28,7 @@ class FlowDataView(QMainWindow):
         self.sequence_complete.connect(self.pid_chart.update)
         self.sequence_monitor.layout.addWidget(self.start_button, 0, 3, 1, 2)
         self.odour_chemicals = OdourChemicalWidget(self.controller)
+        self.odour_bottles = OdourBottleWidget(self.controller)
         main_frame = QFrame()
         layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)
@@ -34,7 +36,8 @@ class FlowDataView(QMainWindow):
         layout.addWidget(self.flow_chart, 0, 0, 3, 1)
         layout.addWidget(self.pid_chart, 3, 0, 3, 1)
         layout.addWidget(self.sequence_monitor, 6, 0, 1, 1)
-        layout.addWidget(self.odour_chemicals, 0, 1, 3, 1)
+        layout.addWidget(self.odour_bottles, 0, 1, 3, 1)
+        layout.addWidget(self.odour_chemicals, 0, 2, 3, 1)
 
         self.flow_chart.setMouseTracking(True)
         self.pid_chart.setMouseTracking(True)

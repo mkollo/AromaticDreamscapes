@@ -1,11 +1,12 @@
+import csv
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QMessageBox
 from base_list import BaseListWidget
 
 class ListDataWidget(QWidget):
     def __init__(self, title, headers, select_callback):
         super().__init__()
-
+        self.title = title
         self.group_box = QGroupBox(title)
 
         self.base_list = BaseListWidget(headers=headers, select_callback=select_callback)
@@ -51,9 +52,24 @@ class ListDataWidget(QWidget):
         self.base_list.add_data(data)
 
     def load_data(self):
-        # TODO: Implement loading data from a JSON file
-        pass
+        file_path, _ = QFileDialog.getOpenFileName(self, "Load table", "", "TSV files (*.tsv);;All files (*.*)")
+        if file_path:
+            with open(file_path, 'r') as f:
+                reader = csv.DictReader(f, delimiter='\t')
+                reply = QMessageBox.question(self, 'Table overwrite', 'Are you sure you want overwrite the "' + self.title + '" table?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    for i in range(self.base_list.rowCount()):
+                        self.base_list.remove_row(i)
+                    for row in reader:                        
+                        self.base_list.add_row(row)
+                    else:
+                        pass
 
     def save_data(self):
-        # TODO: Implement saving data to a JSON file
-        pass
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save table", "", "TSV files (*.tsv);;All files (*.*)")
+        if file_path:
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=self.base_list.headers, delimiter='\t')
+                writer.writeheader()
+                for d in self.base_list.data:
+                    writer.writerow(d)

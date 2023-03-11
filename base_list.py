@@ -13,7 +13,8 @@ class BaseListWidget(QTableWidget):
         super().__init__(parent)
         self.selected_row = None
         self.data = None
-
+        self.headers = headers
+        
         self.original_palette = QPalette()
         self.original_palette.setColor(QPalette.Base, QColor("#FFFFFF"))
         self.original_palette.setColor(QPalette.Window, QColor("#C6D9F1"))

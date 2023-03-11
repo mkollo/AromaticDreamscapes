@@ -122,24 +122,26 @@ class BaseListWidget(QTableWidget):
                 self.setCellWidget(row_index, col, self._get_widget())
 
     def move_selected_item_up(self):
-        row = self.selected_row
-        if row < 1:
-            return
-        new_row = row - 1
-        self.insert_row_data(new_row, self.get_row_data(row))
-        self.remove_row_data(row + 1)
-        self.select_row(new_row)
-        self.selected_row = new_row
+        if self.selected_row is not None:
+            row = self.selected_row
+            if row < 1:
+                return
+            new_row = row - 1
+            self.insert_row_data(new_row, self.get_row_data(row))
+            self.remove_row_data(row + 1)
+            self.select_row(new_row)
+            self.selected_row = new_row
 
     def move_selected_item_down(self):
-        row = self.selected_row
-        if row >= self.rowCount() - 1:
-            return
-        new_row = row + 2
-        self.insert_row_data(new_row, self.get_row_data(row))
-        self.remove_row_data(row)
-        self.select_row(new_row - 1)
-        self.selected_row = new_row - 1
+        if self.selected_row is not None:
+            row = self.selected_row
+            if row >= self.rowCount() - 1:
+                return
+            new_row = row + 2
+            self.insert_row_data(new_row, self.get_row_data(row))
+            self.remove_row_data(row)
+            self.select_row(new_row - 1)
+            self.selected_row = new_row - 1
 
     def get_selected_row(self):
         return self.selected_row

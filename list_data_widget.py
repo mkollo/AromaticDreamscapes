@@ -14,10 +14,10 @@ class ListDataWidget(QWidget):
         self.group_box.setLayout(group_box_layout)
 
         add_button = QPushButton(QIcon("icons/plus.png"), "")
-        # add_button.clicked.connect(self.base_list.add_item)
+        add_button.clicked.connect(self.add_data_row)
 
         remove_button = QPushButton(QIcon("icons/minus.png"), "")
-        # remove_button.clicked.connect(self.base_list.remove_selected_items)
+        remove_button.clicked.connect(self.remove_data_row)
 
         move_up_button = QPushButton(QIcon("icons/up.png"), "")
         move_up_button.clicked.connect(self.base_list.move_selected_item_up)
@@ -47,6 +47,22 @@ class ListDataWidget(QWidget):
         layout.addWidget(self.group_box)
 
         self.setLayout(layout)
+
+    def add_data_row(self):
+        pass
+
+    def remove_data_row(self):
+        reply = QMessageBox.question(self, 'Remove row', 'Are you sure you want remove this row?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.base_list.removeRow(self.base_list.selected_row)
+            self.base_list.data = self.base_list.data[:self.base_list.selected_row] + self.base_list.data[self.base_list.selected_row + 1:]
+            self.base_list.setRowCount(0)
+            self.selected_row = None
+            for row in self.base_list.data:                        
+                self.base_list.add_row(row.values())
+            else:
+                pass
+      
 
     def add_data(self, data):
         self.base_list.add_data(data)

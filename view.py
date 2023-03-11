@@ -3,8 +3,7 @@ from PyQt5.QtCore import  QThread, pyqtSignal
 import numpy as np
 
 from flow_chart import FlowChart
-from base_list import BaseListWidget
-from list_data_widget import ListDataWidget
+from odour_chemical_widget import OdourChemicalWidget
 from pid_chart import PidChart
 from sequence_monitor import SequenceMonitor, SequenceProgressWorker
 from play_valve_sequence_worker import PlayValveSequenceWorker
@@ -27,8 +26,7 @@ class FlowDataView(QMainWindow):
         self.sequence_complete.connect(self.flow_chart.update)
         self.sequence_complete.connect(self.pid_chart.update)
         self.sequence_monitor.layout.addWidget(self.start_button, 0, 3, 1, 2)
-        self.list = ListDataWidget("Test list", ["Nev", "Tema1", "Tema2"], lambda row: print(row))
-        self.list.add_data([{ "Nev": "Nev1", "Tema1": 1, "Tema2": 2 }, { "Nev": "Nev2", "Tema1": 3, "Tema2": 4 }, { "Nev": "Nev3", "Tema1": 5, "Tema2": 6 }])
+        self.odour_chemicals = OdourChemicalWidget(self.controller)
         main_frame = QFrame()
         layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)
@@ -36,7 +34,7 @@ class FlowDataView(QMainWindow):
         layout.addWidget(self.flow_chart, 0, 0, 3, 1)
         layout.addWidget(self.pid_chart, 3, 0, 3, 1)
         layout.addWidget(self.sequence_monitor, 6, 0, 1, 1)
-        layout.addWidget(self.list, 0, 1, 3, 1)
+        layout.addWidget(self.odour_chemicals, 0, 1, 3, 1)
 
         self.flow_chart.setMouseTracking(True)
         self.pid_chart.setMouseTracking(True)

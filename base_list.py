@@ -12,7 +12,7 @@ class BaseListWidget(QTableWidget):
     def __init__(self, headers, select_callback, parent=None):
         super().__init__(parent)
         self.selected_row = None
-        self.data = None
+        self.data = []
         self.headers = headers
         
         self.original_palette = QPalette()
@@ -78,11 +78,12 @@ class BaseListWidget(QTableWidget):
 
     def add_row(self, row_data):
         i_row = self.rowCount()
-        self.insertRow(i_row)        
+        self.insertRow(i_row)           
         for i_col, value in enumerate(row_data):           
             item = QTableWidgetItem(str(value))
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.setItem(i_row, i_col, item)
+        self.data.append(row_data)
 
     def select_row(self, row):
         self.selectRow(row)

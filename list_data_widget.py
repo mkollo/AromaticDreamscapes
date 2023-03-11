@@ -3,90 +3,94 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QMessageBox
 from base_list import BaseListWidget
 
+
 class ListDataWidget(QWidget):
-    def __init__(self, title, headers, select_callback):
+    def __init__(self, title, headers, select_callback, ignore_buttons=[], extra_buttons=[]):
         super().__init__()
+
         self.title = title
+        self.headers = headers
+
         self.group_box = QGroupBox(title)
 
-        self.base_list = BaseListWidget(headers=headers, select_callback=select_callback)
-        group_box_layout = QVBoxLayout()
-        self.group_box.setLayout(group_box_layout)
-
-        add_button = QPushButton(QIcon("icons/plus.png"), "")
-        add_button.clicked.connect(self.add_data_row)
-
-        remove_button = QPushButton(QIcon("icons/minus.png"), "")
-        remove_button.clicked.connect(self.remove_data_row)
-
-        move_up_button = QPushButton(QIcon("icons/up.png"), "")
-        move_up_button.clicked.connect(self.base_list.move_selected_item_up)
-
-        move_down_button = QPushButton(QIcon("icons/down.png"), "")
-        move_down_button.clicked.connect(self.base_list.move_selected_item_down)
-
-        load_button = QPushButton(QIcon("icons/load.png"), "")
-        load_button.clicked.connect(self.load_data)
-
-        save_button = QPushButton(QIcon("icons/save.png"), "")
-        save_button.clicked.connect(self.save_data)
+        self.base_list = BaseListWidget(
+            headers=headers, select_callback=select_callback)
 
         button_layout = QHBoxLayout()
-        button_layout.addWidget(add_button)
-        button_layout.addWidget(remove_button)
-        button_layout.addWidget(move_up_button)
-        button_layout.addWidget(move_down_button)
-        button_layout.addStretch()
-        button_layout.addWidget(load_button)
-        button_layout.addWidget(save_button)
+        buttons = [{'icon': 'plus', 'callback': self.add_data_row}, {'icon': 'minus', 'callback': self.remove_data_row}, {'icon': 'up', 'callback': self.base_list.move_selected_item_up}, {'icon': 'down', 'callback': self.base_list.move_selected_item_down}, {'icon': 'extra_placehoder'}, {'icon': 'stretch'}, {'icon': 'load', 'callback': self.load_data}, {'icon': 'save', 'callback': self.save_data}]
+        self.add_buttons(button_layout, buttons, ignore_buttons, extra_buttons)
 
+        group_box_layout = QVBoxLayout()
         group_box_layout.addLayout(button_layout)
         group_box_layout.addWidget(self.base_list)
+        self.group_box.setLayout(group_box_layout)
 
         layout = QVBoxLayout()
         layout.addWidget(self.group_box)
-
         self.setLayout(layout)
 
+    def add_buttons(self, button_layout, buttons, ignore_buttons, extra_buttons):
+        for b in buttons:
+            if b['icon'] == 'stretch':
+                button_layout.addStretch()
+            elif b['icon'] == 'extra_placehoder':
+                for eb in extra_buttons:
+                    button = QPushButton(QIcon("icons/" + eb['icon'] + ".png"), "")
+                    button.clicked.connect(eb['callback'])
+                    button_layout.addWidget(button)
+            elif b['icon'] not in ignore_buttons:
+                button = QPushButton(QIcon("icons/" + b['icon'] + ".png"), "")
+                button.clicked.connect(b['callback'])
+                button_layout.addWidget(button)    
+
+    def get_column(self, index):
+        return [list(row)[index] for row in self.base_list.data]
+        
     def add_data_row(self):
         pass
 
-    def remove_data_row(self):
-        reply = QMessageBox.question(self, 'Remove row', 'Are you sure you want remove this row?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    def remove_data_row(self):        
+        reply = QMessageBox.question(
+            self, 'Remove row', 'Are you sure you want remove this row?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.base_list.removeRow(self.base_list.selected_row)
-            self.base_list.data = self.base_list.data[:self.base_list.selected_row] + self.base_list.data[self.base_list.selected_row + 1:]
+            self.base_list.data = self.base_list.data[:self.base_list.selected_row] + \
+                self.base_list.data[self.base_list.selected_row + 1:]
             self.base_list.setRowCount(0)
             self.selected_row = None
-            for row in self.base_list.data:                        
+            for row in self.base_list.data:
                 self.base_list.add_row(row.values())
-            else:
-                pass
-      
 
     def add_data(self, data):
         self.base_list.add_data(data)
 
-    def load_data(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Load table", "", "TSV files (*.tsv);;All files (*.*)")
-        if file_path:
-            with open(file_path, 'r') as f:
-                reader = csv.DictReader(f, delimiter='\t')
-                reply = QMessageBox.question(self, 'Table overwrite', 'Are you sure you want overwrite the "' + self.title + '" table?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+    def load_data_from_file(self, file_path, prompt=True):
+        with open(file_path, 'r') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            if prompt:
+                reply = QMessageBox.question(self, 'Table overwrite', 'Are you sure you want overwrite the "' +
+                                                self.title + '" table?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
-                    self.base_list.setRowCount(0)
-                    self.selected_row = None
-                    self.data = None
-                    for row in reader:                        
-                        self.base_list.add_row(row.values())
-                    else:
-                        pass
+                    return        
+            self.base_list.setRowCount(0)
+            self.selected_row = None
+            self.data = None
+            for row in reader:
+                self.base_list.add_row(row.values())
+            
+    def load_data(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Load table", "", "TSV files (*.tsv);;All files (*.*)")
+        if file_path:
+            self.load_data_from_file(file_path)
 
     def save_data(self):
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save table", "", "TSV files (*.tsv);;All files (*.*)")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save table", "", "TSV files (*.tsv);;All files (*.*)")
         if file_path:
             with open(file_path, 'w', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=self.base_list.headers, delimiter='\t')
+                writer = csv.DictWriter(
+                    f, fieldnames=self.base_list.headers, delimiter='\t')
                 writer.writeheader()
                 for d in self.base_list.data:
                     writer.writerow(d)

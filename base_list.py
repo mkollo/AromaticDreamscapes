@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent
 from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
+import pandas as pd
 
 selected_color = "#D4FEDF"
 hover_color = "#D4EEFF"
@@ -12,9 +13,9 @@ class BaseListWidget(QTableWidget):
 
     def __init__(self, headers, select_callback, double_select_callback, parent=None):
         super().__init__(parent)
-        self.selected_row = None
-        self.data = []
+        self.selected_row = None        
         self.headers = headers
+        self.data = pd.DataFrame(columns=headers)
 
         self.original_palette = QPalette()
         self.original_palette.setColor(QPalette.Base, QColor("#FFFFFF"))
@@ -64,12 +65,6 @@ class BaseListWidget(QTableWidget):
         self.row_clicked.connect(lambda row: select_callback(row))
         self.row_double_clicked.connect(lambda row: double_select_callback(row))
 
-    def add_data(self, data):
-        self.data = data
-        for row in data:
-            self.add_row(list(row.values()))
-        self.resizeColumnsToContents()
-
     def add_row(self, row_data):
         i_row = self.rowCount()
         self.insertRow(i_row)
@@ -77,7 +72,7 @@ class BaseListWidget(QTableWidget):
             item = QTableWidgetItem(str(value).replace("\n", ""))
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.setItem(i_row, i_col, item)
-        self.data.append(row_data)
+        self.data.loc[len(self.data)] = row_data
         self.resizeColumnsToContents()
 
     def select_row(self, row):
@@ -90,16 +85,11 @@ class BaseListWidget(QTableWidget):
             self.setRowCount(self.rowCount() - 1)
             if row == self.selected_row:
                 self.selected_row = None
+            self.data = self.data.drop(index=row)  # Remove the row from the dataframe
         self.resizeColumnsToContents()
 
     def get_row_data(self, row_index):
-        row_data = []
-        for col in range(self.columnCount()):
-            item = self.item(row_index, col)
-            if item is not None:
-                row_data.append(item.text())
-            else:
-                row_data.append('')                
+        row_data = self.data.iloc[row_index].tolist()  # Retrieve a row from the dataframe and convert to a list
         return row_data
 
     def insert_row_data(self, row_index, row_data=None):
@@ -110,6 +100,7 @@ class BaseListWidget(QTableWidget):
                 item = QTableWidgetItem(str(value))
                 item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                 self.setItem(row_index, col, item)
+            self.data = self.data.append(pd.Series(row_data, index=self.data.columns), ignore_index=True)  # Insert the row into the dataframe
         else:
             for col in range(self.columnCount()):            
                 item = QTableWidgetItem("")
@@ -117,6 +108,7 @@ class BaseListWidget(QTableWidget):
                 item.setBackground(QColor("#FFFFFF"))
                 self.setItem(row_index, col, item)
                 self.setCellWidget(row_index, col, self._get_widget())
+            self.data = self.data.append(pd.Series([None] * len(self.data.columns), index=self.data.columns), ignore_index=True)  # Insert an empty row into the dataframe
         self.resizeColumnsToContents()
 
     def move_selected_item_up(self):
@@ -129,6 +121,7 @@ class BaseListWidget(QTableWidget):
             self.remove_row_data(row + 1)
             self.select_row(new_row)
             self.selected_row = new_row
+            self.data = self.data.move(row, new_row)  # Move the row in the dataframe
 
     def move_selected_item_down(self):
         if self.selected_row is not None:
@@ -140,6 +133,7 @@ class BaseListWidget(QTableWidget):
             self.remove_row_data(row)
             self.select_row(new_row - 1)
             self.selected_row = new_row - 1
+            self.data = self.data.move(row, new_row)  # Move the row in the dataframe
 
     def get_selected_row(self):
         return self.selected_row

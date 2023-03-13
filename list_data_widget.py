@@ -63,9 +63,6 @@ class ListDataWidget(QWidget):
             for row in self.base_list.data:
                 self.base_list.add_row(row.values())
 
-    def add_data(self, data):
-        self.base_list.add_data(data)
-
     def load_data_from_file(self, file_path, prompt=True):
         with open(file_path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t')
@@ -90,10 +87,5 @@ class ListDataWidget(QWidget):
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Save table", "", "TSV files (*.tsv);;All files (*.*)")
         if file_path:
-            with open(file_path, 'w', newline='') as f:
-                writer = csv.DictWriter(
-                    f, fieldnames=self.base_list.headers, delimiter='\t')
-                writer.writeheader()
-                for d in self.base_list.data:
-                    writer.writerow(d)
+            self.base_list.data.to_csv(file_path, sep='\t', index=False)
 

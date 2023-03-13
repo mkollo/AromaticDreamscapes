@@ -3,9 +3,9 @@ from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
 import pandas as pd
 
-selected_color = "#D4FEDF"
-hover_color = "#D4EEFF"
-selected_hover_color = "#D4E8EF"
+selected_color = "#94FEDF"
+hover_color = "#E4EFFF"
+selected_hover_color = "#A4E8DF"
 
 class BaseListWidget(QTableWidget):
     row_clicked = pyqtSignal(int)
@@ -66,15 +66,59 @@ class BaseListWidget(QTableWidget):
         self.row_double_clicked.connect(lambda row: double_select_callback(row))
 
     def add_row(self, row_data):
+        self.data.loc[len(self.data)] = row_data
         i_row = self.rowCount()
         self.insertRow(i_row)
         for i_col, value in enumerate(row_data):
-            item = QTableWidgetItem(str(value).replace("\n", ""))
-            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            self.setItem(i_row, i_col, item)
-        self.data.loc[len(self.data)] = row_data
+            if self.headers[i_col].endswith("?"):
+                for row in range(self.rowCount()):
+                    button = QStyleOptionButton()
+                    button.rect = self.visualRect(self.model().index(row, i_col))
+                    button.state |= QStyle.State_Enabled
+                    if self.data.iloc[row, i_col]:
+                        button.state |= QStyle.State_On
+                    else:
+                        button.state |= QStyle.State_Off
+            else:
+                item = QTableWidgetItem(str(value).replace("\n", ""))
+                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                self.setItem(i_row, i_col, item)            
         self.resizeColumnsToContents()
 
+    def paintEvent(self, event):
+            super().paintEvent(event)
+            painter = QPainter(self.viewport())
+
+            for col in range(self.columnCount()):
+                if self.headers[col].endswith("?"):
+                    for row in range(self.rowCount()):
+                        button = QStyleOptionButton()
+                        button.rect = self.visualRect(self.model().index(row, col))
+                        button.state |= QStyle.State_Enabled
+                        if self.data.iloc[row, col]:
+                            button.state |= QStyle.State_On
+                        else:
+                            button.state |= QStyle.State_Off
+                        self.style().drawControl(QStyle.CE_CheckBox, button, painter, self)
+
+            if self.hover_row >= 0:
+                # Calculate the rect of the hovered row
+                rect = self.visualRect(self.model().index(self.hover_row, 0))
+
+                # Draw a blue background for the entire row
+                if (self.hover_row == self.selected_row):
+                    painter.fillRect(rect, QColor(selected_hover_color))
+                else:
+                    painter.fillRect(rect, QColor(hover_color))
+
+            
+                # Draw the text for each cell in the row
+                for col in range(self.columnCount()):
+                    rect = self.visualRect(self.model().index(self.hover_row, col))
+                    text = self.model().data(self.model().index(self.hover_row, col))
+                    painter.drawText(rect.translated(3, 0), Qt.AlignVCenter | Qt.AlignLeft, text)
+
+                    
     def select_row(self, row):
         self.selectRow(row)
         self.selected_row = row
@@ -172,27 +216,7 @@ class BaseListWidget(QTableWidget):
 
     def _on_row_hovered(self, index):
         self.hover_row = index.row()
-        self.viewport().update()  # Schedule a repaint of the viewport
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        if self.hover_row >= 0:
-            # Calculate the rect of the hovered row
-            rect = self.visualRect(self.model().index(self.hover_row, 0))
-
-            # Draw a blue background for the entire row
-            painter = QPainter(self.viewport())
-            if (self.hover_row == self.selected_row):
-                painter.fillRect(rect, QColor(selected_hover_color))
-            else:
-                painter.fillRect(rect, QColor(hover_color))
-
-           
-             # Draw the text for each cell in the row
-            for col in range(self.columnCount()):
-                rect = self.visualRect(self.model().index(self.hover_row, col))
-                text = self.model().data(self.model().index(self.hover_row, col))
-                painter.drawText(rect.translated(3, 0), Qt.AlignVCenter | Qt.AlignLeft, text)
+        self.viewport().update()  # Schedule a repaint of the viewport   
 
     def eventFilter(self, source, event):
         if source is self.viewport() and event.type() == QEvent.Paint:

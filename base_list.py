@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QPoint
 from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
 import pandas as pd
@@ -99,6 +99,15 @@ class BaseListWidget(QTableWidget):
                             button.state |= QStyle.State_On
                         else:
                             button.state |= QStyle.State_Off
+                        # Center the checkbox within the cell
+                        checkbox_rect = self.style().subElementRect(QStyle.SE_CheckBoxIndicator, button)
+                        checkbox_size = checkbox_rect.size()
+                        cell_rect = self.visualRect(self.model().index(row, col))
+                        cell_size = cell_rect.size()
+                        x = cell_rect.left() + (cell_size.width() - checkbox_size.width()) / 2
+                        y = cell_rect.top() + (cell_size.height() - checkbox_size.height()) / 2
+                        checkbox_rect.moveTopLeft(QPoint(x, y))
+                        button.rect = checkbox_rect
                         self.style().drawControl(QStyle.CE_CheckBox, button, painter, self)
 
             if self.hover_row >= 0:

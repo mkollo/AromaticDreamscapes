@@ -11,7 +11,7 @@ selected_hover_color = "#A4E8DF"
 class BaseListWidget(QTableWidget):
     row_clicked = pyqtSignal(int)
     row_double_clicked = pyqtSignal(int)
-    row_dropped = pyqtSignal(int, int, str, pd.DataFrame)
+    row_dropped = pyqtSignal(int, int, int)
 
     def __init__(self, headers, select_callback, double_select_callback, drop_callback, parent=None):
         super().__init__(parent)
@@ -69,8 +69,32 @@ class BaseListWidget(QTableWidget):
 
         self.row_clicked.connect(lambda row: select_callback(row))
         self.row_double_clicked.connect(lambda row: double_select_callback(row))
-        self.row_dropped.connect(lambda source_row, target_row, parent_type, dataframe: drop_callback(source_row, target_row, parent_type, dataframe))
+        self.row_dropped.connect(lambda source_id, source_row, target_row: drop_callback(source_id, source_row, target_row))
 
+    def update_widget(self):
+        self.setRowCount(0)
+        self.selected_row = None
+        for i_row, row in self.data.iterrows():
+            for i, header in enumerate(self.headers):
+                if header.endswith('?') and row[i] == '':
+                    row[i] = False
+            self.insertRow(i_row)
+            for i_col, value in enumerate(row):
+                if self.headers[i_col].endswith("?"):
+                    for row in range(self.rowCount()):
+                        checkbox = QStyleOptionButton()
+                        checkbox.rect = self.visualRect(self.model().index(row, i_col))
+                        checkbox.state |= QStyle.State_Enabled
+                        if self.data.iloc[row, i_col]=="True":
+                            checkbox.state |= QStyle.State_On
+                        else:
+                            checkbox.state |= QStyle.State_Off
+                else:
+                    item = QTableWidgetItem(str(value).replace("\n", ""))
+                    item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                    self.setItem(i_row, i_col, item)            
+            self.resizeColumnsToContents()
+            
     def add_row(self, row_data):
         self.data.loc[len(self.data)] = row_data
         i_row = self.rowCount()
@@ -148,9 +172,10 @@ class BaseListWidget(QTableWidget):
                 if selected_row != -1:
                     drag = QDrag(self)
                     mime_data = QMimeData()
-                    mime_data.setText(str(selected_row)) # Set the source row number as integer data                    
-                    mime_data.setData('application/x-myapp-parent-type', self.parent().parent().__class__.__name__.encode()) # Set the parent type as byte data
-                    mime_data.setData('application/x-myapp-dataframe', pickle.dumps(self.data))
+                    mime_data.setData('application/x-myapp-source_row', selected_row.to_bytes(4, byteorder='little'))  # Set the source row number as integer data                   
+                    mime_data.setData('application/x-myapp-source_id', id(self.parent().parent()).to_bytes(4, byteorder='little')) # Set the source row number as integer data
+                    # mime_data.setData('application/x-myapp-parent-type', self.parent().parent().__class__.__name__.encode()) # Set the parent type as byte data
+                    # mime_data.setData('application/x-myapp-dataframe', pickle.dumps(self.data))
                     drag.setMimeData(mime_data)
                     pixmap = self.grab(self.visualRect(self.model().index(selected_row+1, 0))) # Get the pixmap of the selected row
                     drag.setPixmap(pixmap)
@@ -158,14 +183,14 @@ class BaseListWidget(QTableWidget):
                     drag.exec_()
         super().mouseMoveEvent(event)
 
-    def dropEvent(self, event):        
-        if event.mimeData().hasText() and event.mimeData().hasFormat('application/x-myapp-parent-type') and event.mimeData().hasFormat('application/x-myapp-dataframe'):            
-            source_row = int(event.mimeData().text())
+    def dropEvent(self, event):       
+        if event.mimeData().hasFormat('application/x-myapp-source_row') and event.mimeData().hasFormat('application/x-myapp-source_id'):            
+            source_id = int.from_bytes(event.mimeData().data('application/x-myapp-source_id'), byteorder='little')
+            source_row = int.from_bytes(event.mimeData().data('application/x-myapp-source_row'), byteorder='little')
             target_row = self.rowAt(event.pos().y())
-            parent_type = bytes(event.mimeData().data('application/x-myapp-parent-type')).decode()
-            df_bytes = event.mimeData().data('application/x-myapp-dataframe')
-            dataframe = pickle.loads(df_bytes)
-            self.row_dropped.emit(source_row, target_row, parent_type, dataframe)
+            # df_bytes = event.mimeData().data('application/x-myapp-dataframe')
+            # dataframe = pickle.loads(df_bytes)
+            self.row_dropped.emit(source_id, source_row, target_row)
 
     def select_row(self, row):
         self.selectRow(row)

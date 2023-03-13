@@ -28,7 +28,7 @@ class FlowDataView(QMainWindow):
         self.sequence_complete.connect(self.pid_chart.update)
         self.sequence_monitor.layout.addWidget(self.start_button, 0, 3, 1, 2)
         self.odour_chemicals = OdourChemicalWidget()
-        self.odour_bottles = OdourBottleWidget()
+        self.odour_bottles = OdourBottleWidget(self.odour_chemicals)
         main_frame = QFrame()
         layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)

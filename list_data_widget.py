@@ -7,7 +7,7 @@ def no_action(self):
     pass
 
 class ListDataWidget(QWidget):
-    def __init__(self, title, headers, select_callback=lambda row:no_action, double_select_callback=lambda row:no_action, drop_callback=lambda source_row, target_row, parent_type, dataframe:no_action, ignore_buttons=[], extra_buttons=[]):
+    def __init__(self, title, headers, select_callback=lambda row:no_action, double_select_callback=lambda row:no_action, drop_callback=lambda source_id, source_row, target_row:no_action, ignore_buttons=[], extra_buttons=[]):
         super().__init__()
 
         self.title = title

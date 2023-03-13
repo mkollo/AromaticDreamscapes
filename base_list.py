@@ -72,13 +72,13 @@ class BaseListWidget(QTableWidget):
         for i_col, value in enumerate(row_data):
             if self.headers[i_col].endswith("?"):
                 for row in range(self.rowCount()):
-                    button = QStyleOptionButton()
-                    button.rect = self.visualRect(self.model().index(row, i_col))
-                    button.state |= QStyle.State_Enabled
-                    if self.data.iloc[row, i_col]:
-                        button.state |= QStyle.State_On
+                    checkbox = QStyleOptionButton()
+                    checkbox.rect = self.visualRect(self.model().index(row, i_col))
+                    checkbox.state |= QStyle.State_Enabled
+                    if self.data.iloc[row, i_col]=="True":
+                        checkbox.state |= QStyle.State_On
                     else:
-                        button.state |= QStyle.State_Off
+                        checkbox.state |= QStyle.State_Off
             else:
                 item = QTableWidgetItem(str(value).replace("\n", ""))
                 item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
@@ -92,23 +92,23 @@ class BaseListWidget(QTableWidget):
             for col in range(self.columnCount()):
                 if self.headers[col].endswith("?"):
                     for row in range(self.rowCount()):
-                        button = QStyleOptionButton()
-                        button.rect = self.visualRect(self.model().index(row, col))
-                        button.state |= QStyle.State_Enabled
-                        if self.data.iloc[row, col]:
-                            button.state |= QStyle.State_On
+                        checkbox = QStyleOptionButton()
+                        checkbox.rect = self.visualRect(self.model().index(row, col))
+                        checkbox.state |= QStyle.State_Enabled
+                        if self.data.iloc[row, col]=="True":
+                            checkbox.state |= QStyle.State_On
                         else:
-                            button.state |= QStyle.State_Off
+                            checkbox.state |= QStyle.State_Off
                         # Center the checkbox within the cell
-                        checkbox_rect = self.style().subElementRect(QStyle.SE_CheckBoxIndicator, button)
+                        checkbox_rect = self.style().subElementRect(QStyle.SE_CheckBoxIndicator, checkbox)
                         checkbox_size = checkbox_rect.size()
                         cell_rect = self.visualRect(self.model().index(row, col))
                         cell_size = cell_rect.size()
                         x = cell_rect.left() + (cell_size.width() - checkbox_size.width()) / 2
                         y = cell_rect.top() + (cell_size.height() - checkbox_size.height()) / 2
                         checkbox_rect.moveTopLeft(QPoint(x, y))
-                        button.rect = checkbox_rect
-                        self.style().drawControl(QStyle.CE_CheckBox, button, painter, self)
+                        checkbox.rect = checkbox_rect
+                        self.style().drawControl(QStyle.CE_CheckBox, checkbox, painter, self)
 
             if self.hover_row >= 0:
                 # Calculate the rect of the hovered row
@@ -145,6 +145,22 @@ class BaseListWidget(QTableWidget):
         row_data = self.data.iloc[row_index].tolist()  # Retrieve a row from the dataframe and convert to a list
         return row_data
 
+    def mousePressEvent(self, event):
+        index = self.indexAt(event.pos())
+        if not index.isValid():
+            super().mousePressEvent(event)
+            return
+        if self.headers[index.column()].endswith("?"):
+            if event.button() == Qt.LeftButton:
+                # Toggle the state of the checkbox
+                row = index.row()
+                col = index.column()
+                state = self.data.iloc[row, col]
+                self.data.iloc[row, col] = not state
+                self.viewport().update()
+                return
+        super().mousePressEvent(event)
+        
     def insert_row_data(self, row_index, row_data=None):
         self.insertRow(row_index)
         self.setRowCount(self.rowCount()+1)

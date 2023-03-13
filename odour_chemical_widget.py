@@ -12,7 +12,7 @@ class OdourChemicalWidget(ListDataWidget):
             headers = f.readline().split("\t")
         ignore_buttons = ["plus", "minus", "up", "down", "load", "save"]
         extra_buttons = [{'icon': 'distancematrix', 'callback': lambda: self.plot_distance_matrix(
-            "resources/canberra_all.csv", self.get_column(0))}, {'icon': 'pointmap', 'callback': lambda: plot_point_map("resources/canberra_all_mds.csv", self.get_column(0), self.get_column(2))}]
+            "resources/canberra_all.csv", self.get_column("Name"))}, {'icon': 'pointmap', 'callback': lambda: plot_point_map("resources/canberra_all_mds.csv", self.get_column("Name"), self.get_column("Saturated_ppm"))}]
         super().__init__("Odour Chemicals", headers, ignore_buttons=ignore_buttons, extra_buttons=extra_buttons)
         self.odour_chemicals_file = "resources/odour_chemicals.tsv"
         self.load_data_from_file(self.odour_chemicals_file, prompt=False)
@@ -27,7 +27,7 @@ class OdourChemicalWidget(ListDataWidget):
         ax.set_xticks(np.arange(len(labels)))
         ax.set_xticklabels(labels, rotation=90, fontsize=6)
         ax.set_yticks(np.arange(len(labels)))
-        ax.set_yticklabels(labels, fontsize=6)
+        ax.set_yticklabels(labels, fontsize=5)
         cbar = ax.figure.colorbar(im, ax=ax)
         canvas = FigureCanvas(fig)
         dialog = QDialog()
@@ -39,6 +39,7 @@ class OdourChemicalWidget(ListDataWidget):
         dialog.exec_()
 
 def plot_point_map(csv_file_path, labels, sat_ppm):
+    print(sat_ppm)
     sat_ppm = np.array([float(s)+ 1e-9 for s in sat_ppm], dtype=float)
     with open(csv_file_path, 'r') as f:
         reader = csv.reader(f)
@@ -48,7 +49,7 @@ def plot_point_map(csv_file_path, labels, sat_ppm):
     fig, ax = plt.subplots(figsize=(6, 6))
     im = ax.scatter(data[:, 0], data[:, 1], s=40, c=sat_ppm, cmap='YlOrRd', norm=LogNorm(vmin=np.min(sat_ppm), vmax=np.max(sat_ppm)))
     for i, label in enumerate(labels):
-        ax.annotate(label, (data[i, 0], data[i, 1]), fontsize=6)
+        ax.annotate(label, (data[i, 0], data[i, 1]), fontsize=5)
     cbar = fig.colorbar(im, ax=ax, orientation='horizontal', label='Saturated concentration (ppm)', pad=0.15)
     cbar.ax.set_xscale('log')
     canvas = FigureCanvas(fig)

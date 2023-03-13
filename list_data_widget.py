@@ -45,8 +45,8 @@ class ListDataWidget(QWidget):
                 button.clicked.connect(b['callback'])
                 button_layout.addWidget(button)    
 
-    def get_column(self, index):
-        return [list(row)[index] for row in self.base_list.data]
+    def get_column(self, key):
+        return self.base_list.data[key]
         
     def add_data_row(self):
         pass
@@ -74,8 +74,12 @@ class ListDataWidget(QWidget):
             self.base_list.setRowCount(0)
             self.selected_row = None
             self.data = None
-            for row in reader:
-                self.base_list.add_row(row.values())
+            for row in reader:     
+                row_values = list(row.values())
+                for i, header in enumerate(self.headers):
+                    if header.endswith('?') and row_values[i] == '':
+                        row_values[i] = False    
+                self.base_list.add_row(row_values)
             
     def load_data(self):
         file_path, _ = QFileDialog.getOpenFileName(

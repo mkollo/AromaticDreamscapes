@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QPoint
-from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush
+from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QPoint, QMimeData
+from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush, QDrag
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
 import pandas as pd
 
@@ -29,6 +29,12 @@ class BaseListWidget(QTableWidget):
 
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.setDragEnabled(True)        
+        self.setDragDropMode(QTableWidget.DragDrop)
+        self.setDefaultDropAction(Qt.MoveAction)
+        self.setDropIndicatorShown(True)
+
         self.setShowGrid(True)
         self.setGridStyle(Qt.SolidLine)
         self.setAlternatingRowColors(False)
@@ -42,12 +48,9 @@ class BaseListWidget(QTableWidget):
         self.setVerticalHeader(NoHoverHeaderView(Qt.Vertical, self))
         delegate = RowHoverDelegate(self)
         self.setItemDelegate(delegate)
-
         self.setMouseTracking(True)
-
         self.viewport().setMouseTracking(True)
         self.viewport().installEventFilter(self)
-
         self.clicked.connect(self._on_row_clicked)
         self.doubleClicked.connect(self._on_row_double_clicked)
 
@@ -127,7 +130,41 @@ class BaseListWidget(QTableWidget):
                     text = self.model().data(self.model().index(self.hover_row, col))
                     painter.drawText(rect.translated(3, 0), Qt.AlignVCenter | Qt.AlignLeft, text)
 
-                    
+            
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+    
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.LeftButton:
+            # Only start the drag if the mouse has moved at least 5 pixels
+            if (event.pos() - self.drag_start_pos).manhattanLength() > 4:
+                selected_row = self.currentRow()
+                if selected_row != -1:
+                    drag = QDrag(self)
+                    mime_data = QMimeData()
+                    mime_data.setText(str(selected_row)) # Set the source row number as integer data
+                    mime_data.setData('application/x-myapp-parent-type', self.parent().parent().__class__.__name__.encode()) # Set the parent type as byte data
+                    drag.setMimeData(mime_data)
+                    pixmap = self.grab(self.visualRect(self.model().index(selected_row+1, 0))) # Get the pixmap of the selected row
+                    drag.setPixmap(pixmap)
+                    drag.setHotSpot(event.pos() - self.visualRect(self.model().index(selected_row+1, 0)).topLeft()) # Set the hot spot to the mouse cursor position within the pixmap
+                    drag.exec_()
+        super().mouseMoveEvent(event)
+
+    def dropEvent(self, event):
+        if event.mimeData().hasText() and event.mimeData().hasFormat('application/x-myapp-parent-type'):
+            source_row = int(event.mimeData().text())
+            target_row = self.rowAt(event.pos().y())
+            parent_type = bytes(event.mimeData().data('application/x-myapp-parent-type')).decode()
+            self.on_row_dropped(source_row, target_row, parent_type)
+
+    def on_row_dropped(self, source_row, target_row, parent_type):
+        print("Dropped {} from {} on row {}".format(source_row, parent_type, target_row))
+        pass
+
     def select_row(self, row):
         self.selectRow(row)
         self.selected_row = row
@@ -159,6 +196,8 @@ class BaseListWidget(QTableWidget):
                 self.data.iloc[row, col] = not state
                 self.viewport().update()
                 return
+        if event.button() == Qt.LeftButton:
+            self.drag_start_pos = event.pos()
         super().mousePressEvent(event)
         
     def insert_row_data(self, row_index, row_data=None):
@@ -222,10 +261,6 @@ class BaseListWidget(QTableWidget):
     def _on_row_double_clicked(self, index):
         self.selected_row = index.row()
         self.row_double_clicked.emit(index.row())
-
-    def mouseMoveEvent(self, event):
-        self.mouse_pos = event.pos()  # Update mouse position
-        super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):
         self.hover_row = -1  # Reset hover row when mouse leaves table

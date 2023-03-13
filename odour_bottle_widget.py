@@ -7,10 +7,18 @@ class OdourBottleWidget(ListDataWidget):
     def __init__(self):
         ignore_buttons = ["plus", "minus", "up", "down"]
         headers = ["Name", "Chemicals", "Ratios", "Min ppm", "Max ppm", "Error?"]
-        super().__init__("Odour Bottles", double_select_callback=lambda row: self.show_odour_bottle_dialog(row), headers=headers, ignore_buttons=ignore_buttons)
+        super().__init__("Odour Bottles", 
+        double_select_callback=lambda row: self.show_odour_bottle_dialog(row), 
+        drop_callback=lambda source_row, target_row, parent_type, dataframe: self.drop_component(source_row, target_row, parent_type, dataframe),
+        headers=headers, ignore_buttons=ignore_buttons)
 
         self.odour_bottles_file = "resources/odour_bottles.tsv"
         self.load_data_from_file(self.odour_bottles_file, prompt=False)
+
+    def drop_component(self, source_row, target_row, parent_type, dataframe):
+        if parent_type == 'OdourChemicalWidget':            
+            print("{} {} {} ", {source_row, target_row, parent_type})
+            print(dataframe)
 
     def show_odour_bottle_dialog(self, row):
         dialog = QDialog()

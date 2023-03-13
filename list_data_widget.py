@@ -7,7 +7,7 @@ def no_action(self):
     pass
 
 class ListDataWidget(QWidget):
-    def __init__(self, title, headers, select_callback=lambda row:no_action, double_select_callback=lambda row:no_action, ignore_buttons=[], extra_buttons=[]):
+    def __init__(self, title, headers, select_callback=lambda row:no_action, double_select_callback=lambda row:no_action, drop_callback=lambda source_row, target_row, parent_type, dataframe:no_action, ignore_buttons=[], extra_buttons=[]):
         super().__init__()
 
         self.title = title
@@ -16,7 +16,7 @@ class ListDataWidget(QWidget):
         self.group_box = QGroupBox(title)
 
         self.base_list = BaseListWidget(
-            headers=headers, select_callback=select_callback, double_select_callback=double_select_callback)
+            headers=headers, select_callback=select_callback, double_select_callback=double_select_callback, drop_callback=drop_callback)
 
         button_layout = QHBoxLayout()
         buttons = [{'icon': 'plus', 'callback': self.add_data_row}, {'icon': 'minus', 'callback': self.remove_data_row}, {'icon': 'up', 'callback': self.base_list.move_selected_item_up}, {'icon': 'down', 'callback': self.base_list.move_selected_item_down}, {'icon': 'extra_placehoder'}, {'icon': 'stretch'}, {'icon': 'load', 'callback': self.load_data}, {'icon': 'save', 'callback': self.save_data}]

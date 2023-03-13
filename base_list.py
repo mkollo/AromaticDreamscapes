@@ -1,3 +1,4 @@
+import pickle
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QPoint, QMimeData
 from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush, QDrag
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
@@ -10,8 +11,9 @@ selected_hover_color = "#A4E8DF"
 class BaseListWidget(QTableWidget):
     row_clicked = pyqtSignal(int)
     row_double_clicked = pyqtSignal(int)
+    row_dropped = pyqtSignal(int, int, str, pd.DataFrame)
 
-    def __init__(self, headers, select_callback, double_select_callback, parent=None):
+    def __init__(self, headers, select_callback, double_select_callback, drop_callback, parent=None):
         super().__init__(parent)
         self.selected_row = None        
         self.headers = headers
@@ -67,6 +69,7 @@ class BaseListWidget(QTableWidget):
 
         self.row_clicked.connect(lambda row: select_callback(row))
         self.row_double_clicked.connect(lambda row: double_select_callback(row))
+        self.row_dropped.connect(lambda source_row, target_row, parent_type, dataframe: drop_callback(source_row, target_row, parent_type, dataframe))
 
     def add_row(self, row_data):
         self.data.loc[len(self.data)] = row_data
@@ -145,8 +148,9 @@ class BaseListWidget(QTableWidget):
                 if selected_row != -1:
                     drag = QDrag(self)
                     mime_data = QMimeData()
-                    mime_data.setText(str(selected_row)) # Set the source row number as integer data
+                    mime_data.setText(str(selected_row)) # Set the source row number as integer data                    
                     mime_data.setData('application/x-myapp-parent-type', self.parent().parent().__class__.__name__.encode()) # Set the parent type as byte data
+                    mime_data.setData('application/x-myapp-dataframe', pickle.dumps(self.data))
                     drag.setMimeData(mime_data)
                     pixmap = self.grab(self.visualRect(self.model().index(selected_row+1, 0))) # Get the pixmap of the selected row
                     drag.setPixmap(pixmap)
@@ -154,16 +158,14 @@ class BaseListWidget(QTableWidget):
                     drag.exec_()
         super().mouseMoveEvent(event)
 
-    def dropEvent(self, event):
-        if event.mimeData().hasText() and event.mimeData().hasFormat('application/x-myapp-parent-type'):
+    def dropEvent(self, event):        
+        if event.mimeData().hasText() and event.mimeData().hasFormat('application/x-myapp-parent-type') and event.mimeData().hasFormat('application/x-myapp-dataframe'):            
             source_row = int(event.mimeData().text())
             target_row = self.rowAt(event.pos().y())
             parent_type = bytes(event.mimeData().data('application/x-myapp-parent-type')).decode()
-            self.on_row_dropped(source_row, target_row, parent_type)
-
-    def on_row_dropped(self, source_row, target_row, parent_type):
-        print("Dropped {} from {} on row {}".format(source_row, parent_type, target_row))
-        pass
+            df_bytes = event.mimeData().data('application/x-myapp-dataframe')
+            dataframe = pickle.loads(df_bytes)
+            self.row_dropped.emit(source_row, target_row, parent_type, dataframe)
 
     def select_row(self, row):
         self.selectRow(row)

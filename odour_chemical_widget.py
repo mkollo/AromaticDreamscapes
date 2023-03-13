@@ -11,8 +11,10 @@ class OdourChemicalWidget(ListDataWidget):
         with open("resources/odour_chemicals.tsv", "r") as f:
             headers = f.readline().split("\t")
         ignore_buttons = ["plus", "minus", "up", "down", "load", "save"]
-        extra_buttons = [{'icon': 'distancematrix', 'callback': lambda: self.plot_distance_matrix(
-            "resources/canberra_all.csv", self.get_column("Name"))}, {'icon': 'pointmap', 'callback': lambda: plot_point_map("resources/canberra_all_mds.csv", self.get_column("Name"), self.get_column("Saturated_ppm"))}]
+        extra_buttons = [
+            {'icon': 'distancematrix', 'callback': lambda: self.plot_distance_matrix("resources/canberra_all.csv", self.get_column("Name"))}, 
+            {'icon': 'pointmap', 'callback': lambda: plot_point_map("resources/canberra_all_mds.csv", self.get_column("Name"), self.get_column("Saturated_ppm"))}
+            ]
         super().__init__("Odour Chemicals", headers, ignore_buttons=ignore_buttons, extra_buttons=extra_buttons)
         self.odour_chemicals_file = "resources/odour_chemicals.tsv"
         self.load_data_from_file(self.odour_chemicals_file, prompt=False)

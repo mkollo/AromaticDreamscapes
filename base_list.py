@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent
 from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush
-from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle
+from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
 
 selected_color = "#D4FEDF"
 hover_color = "#D4EEFF"
@@ -15,7 +15,7 @@ class BaseListWidget(QTableWidget):
         self.selected_row = None
         self.data = []
         self.headers = headers
-        
+
         self.original_palette = QPalette()
         self.original_palette.setColor(QPalette.Base, QColor("#FFFFFF"))
         self.original_palette.setColor(QPalette.Window, QColor("#C6D9F1"))
@@ -30,9 +30,9 @@ class BaseListWidget(QTableWidget):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setShowGrid(True)
         self.setGridStyle(Qt.SolidLine)
-        self.setAlternatingRowColors(False)        
+        self.setAlternatingRowColors(False)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)   
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalHeader().setMouseTracking(True)
@@ -43,30 +43,21 @@ class BaseListWidget(QTableWidget):
         self.setItemDelegate(delegate)
 
         self.setMouseTracking(True)
-       
+
         self.viewport().setMouseTracking(True)
         self.viewport().installEventFilter(self)
 
         self.clicked.connect(self._on_row_clicked)
         self.doubleClicked.connect(self._on_row_double_clicked)
 
-        title_row = TitleItem("")       
+        title_row = TitleItem("")
         self.setItem(0, 0, title_row)
         for col in range(1, len(headers)):
             self.setItem(0, col, QTableWidgetItem(""))
         self.verticalHeader().setDefaultSectionSize(22)
         self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
-
-        self.setUpdatesEnabled(False)
-        for row in range(self.rowCount()):
-            for col in range(self.columnCount()):
-                item = QTableWidgetItem("")
-                item.setFlags(Qt.ItemIsEnabled | Qt.NoItemFlags)
-                item.setBackground(QColor("#FFFFFF"))
-                self.setItem(row, col, item)
-                self.setCellWidget(row, col, self._get_widget())
         self.setUpdatesEnabled(True)
-       
+
         self.hover_row = -1  # Added to track the currently hovered row
         self.mouse_pos = None  # Added to track the current mouse position
 
@@ -81,9 +72,9 @@ class BaseListWidget(QTableWidget):
 
     def add_row(self, row_data):
         i_row = self.rowCount()
-        self.insertRow(i_row)           
-        for i_col, value in enumerate(row_data):           
-            item = QTableWidgetItem(str(value).replace("\n", ""))            
+        self.insertRow(i_row)
+        for i_col, value in enumerate(row_data):
+            item = QTableWidgetItem(str(value).replace("\n", ""))
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             self.setItem(i_row, i_col, item)
         self.data.append(row_data)
@@ -115,12 +106,12 @@ class BaseListWidget(QTableWidget):
         self.insertRow(row_index)
         self.setRowCount(self.rowCount()+1)
         if row_data is not None:
-            for col, value in enumerate(row_data):
+            for col, value in enumerate(row_data):                
                 item = QTableWidgetItem(str(value))
                 item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                 self.setItem(row_index, col, item)
         else:
-            for col in range(self.columnCount()):
+            for col in range(self.columnCount()):            
                 item = QTableWidgetItem("")
                 item.setFlags(Qt.ItemIsEnabled | Qt.NoItemFlags)
                 item.setBackground(QColor("#FFFFFF"))
@@ -191,7 +182,6 @@ class BaseListWidget(QTableWidget):
 
     def paintEvent(self, event):
         super().paintEvent(event)
-
         if self.hover_row >= 0:
             # Calculate the rect of the hovered row
             rect = self.visualRect(self.model().index(self.hover_row, 0))
@@ -203,7 +193,8 @@ class BaseListWidget(QTableWidget):
             else:
                 painter.fillRect(rect, QColor(hover_color))
 
-            # Draw the text for each cell in the row
+           
+             # Draw the text for each cell in the row
             for col in range(self.columnCount()):
                 rect = self.visualRect(self.model().index(self.hover_row, col))
                 text = self.model().data(self.model().index(self.hover_row, col))

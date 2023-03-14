@@ -15,8 +15,8 @@ from odour_chemical_widget import OdourChemicalWidget
 class OdourBottleWidget(ListDataWidget):
     def __init__(self, chemical_widget: OdourChemicalWidget):
         self.chemical_widget = chemical_widget                
-        self.distance_file = "resources/canberra_all.csv"
-        self.map_file = "resources/canberra_all_mds.csv"
+        self.distance_file = "data/canberra_all.csv"
+        self.map_file = "data/canberra_all_mds.csv"
 
         ignore_buttons = ["plus", "minus", "up", "down"]
         headers = ["Name", "Chemicals", "Ratios", "Min ppm", "Max ppm", "CV ppm", "Error?"]
@@ -33,7 +33,7 @@ class OdourBottleWidget(ListDataWidget):
         headers=headers, ignore_buttons=ignore_buttons,
         extra_buttons=extra_buttons)
 
-        self.odour_bottles_file = "resources/odour_bottles.tsv"
+        self.odour_bottles_file = "data/odour_bottles.tsv"
         self.load_data_from_file(self.odour_bottles_file, prompt=False)
         self.update_bottle_colors()     
 

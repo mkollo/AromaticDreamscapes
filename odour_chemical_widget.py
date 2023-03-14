@@ -8,9 +8,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 class OdourChemicalWidget(ListDataWidget):
     def __init__(self):
-        self.distance_file = "resources/canberra_all.csv"
-        self.map_file = "resources/canberra_all_mds.csv"
-        with open("resources/odour_chemicals.tsv", "r") as f:
+        self.distance_file = "data/canberra_all.csv"
+        self.map_file = "data/canberra_all_mds.csv"
+        with open("data/odour_chemicals.tsv", "r") as f:
             headers = f.readline().split("\t")
         ignore_buttons = ["plus", "minus", "up", "down", "load", "save"]
         extra_buttons = [
@@ -18,8 +18,11 @@ class OdourChemicalWidget(ListDataWidget):
             {'icon': 'pointmap', 'callback': lambda: self.plot_point_map(self.get_column("Name"), self.get_column("Saturated_ppm"))}
             ]
         super().__init__("Odour Chemicals", headers, ignore_buttons=ignore_buttons, extra_buttons=extra_buttons)
-        self.odour_chemicals_file = "resources/odour_chemicals.tsv"
+        self.odour_chemicals_file = "data/odour_chemicals.tsv"
         self.load_data_from_file(self.odour_chemicals_file, prompt=False)
+        color_data = np.empty(self.base_list.data.shape, dtype=object)
+        color_data[:] = ""
+        self.base_list.set_color_data(color_data)
 
     def get_chemical_data(self, codes):        
         return [self.base_list.data.loc[self.base_list.data['Code']==code,:] for code in codes]

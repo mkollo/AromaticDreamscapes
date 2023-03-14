@@ -16,8 +16,8 @@ class SequenceWidget(ListDataWidget):
     def __init__(self, odour_bottle_widget: OdourBottleWidget, chemical_widget: OdourBottleWidget):
         self.odour_bottle_widget = odour_bottle_widget
         self.chemical_widget = chemical_widget
-        self.distance_file = "resources/canberra_all.csv"
-        self.map_file = "resources/canberra_all_mds.csv"
+        self.distance_file = "data/canberra_all.csv"
+        self.map_file = "data/canberra_all_mds.csv"
 
         ignore_buttons = ["plus"]
         headers = ["Name", "O1", "O2", "O3", "O4", "Reward?", "On?"]
@@ -30,11 +30,20 @@ class SequenceWidget(ListDataWidget):
         headers=headers, ignore_buttons=ignore_buttons,
         extra_buttons=extra_buttons)
 
-        self.sequences_file = "resources/sequences.tsv"
+        self.sequences_file = "data/sequences.tsv"
         self.load_data_from_file(self.sequences_file, prompt=False)        
         self.base_list.resizeColumnsToContents()
         self.base_list.update_widget()
         self.update_sequence_colors()
+        print(self.get_sequence_bottles())
+
+    def get_sequence_bottles(self):
+        sequence_bottles = []
+        for seq_idx, seq_row in self.base_list.data.iterrows():
+            for bottle_idx, bottle_row in self.odour_bottle_widget.base_list.data.iterrows():
+                if bottle_row["Name"] in seq_row.values:
+                    sequence_bottles.append(bottle_row)
+        return pd.DataFrame(sequence_bottles)
 
     def update_sequence_colors(self):
         color_data = np.empty(self.base_list.data.shape, dtype=object)

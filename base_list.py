@@ -72,7 +72,7 @@ class BaseListWidget(QTableWidget):
         self.row_double_clicked.connect(lambda row: double_select_callback(row))
         self.row_dropped.connect(lambda source_id, source_row, target_row: drop_callback(source_id, source_row, target_row))
         self.drag_start_pos = -1
-        
+
     def set_color_data(self, color_data):
         self.color_data = color_data
         self.update_widget()

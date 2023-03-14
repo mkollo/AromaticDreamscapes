@@ -6,6 +6,7 @@ from flow_chart import FlowChart
 from odour_bottle_widget import OdourBottleWidget
 from odour_chemical_widget import OdourChemicalWidget
 from pid_chart import PidChart
+from protocol_widget import ProtocolWidget
 from sequence_monitor import SequenceMonitor, SequenceProgressWorker
 from play_valve_sequence_worker import PlayValveSequenceWorker
 from sequence_widget import SequenceWidget
@@ -23,24 +24,28 @@ class FlowDataView(QMainWindow):
         self.flow_chart = FlowChart(controller.get_sampling_rate())
         self.pid_chart = PidChart(controller.get_sampling_rate())
         self.sequence_monitor = SequenceMonitor()        
-        self.start_button = QPushButton("Play next:  " + self.controller.get_current_sequence()['label'])
-        self.start_button.clicked.connect(self.run_next_sequence)        
+     
         self.sequence_complete.connect(self.flow_chart.update)
         self.sequence_complete.connect(self.pid_chart.update)
-        self.sequence_monitor.layout.addWidget(self.start_button, 0, 3, 1, 2)
+
         self.odour_chemicals = OdourChemicalWidget()
         self.odour_bottles = OdourBottleWidget(self.odour_chemicals)
         self.odour_sequences = SequenceWidget(self.odour_bottles, self.odour_chemicals)
+        self.protocols = ProtocolWidget(self.odour_sequences, self.odour_bottles, self.odour_chemicals)
         main_frame = QFrame()
         layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)
         self.setCentralWidget(main_frame)
-        layout.addWidget(self.flow_chart, 0, 0, 3, 1)
-        layout.addWidget(self.pid_chart, 3, 0, 3, 1)
-        layout.addWidget(self.sequence_monitor, 6, 0, 1, 1)
-        layout.addWidget(self.odour_bottles, 0, 4, 3.5, 1)
-        layout.addWidget(self.odour_chemicals, 3, 4, 4, 1)
-        layout.addWidget(self.odour_sequences, 0, 2, 3.5, 1)
+        
+        layout.addWidget(self.flow_chart, 0, 0, 4, 3)
+        layout.addWidget(self.pid_chart, 4, 0, 4, 3)
+        layout.addWidget(self.sequence_monitor, 8, 0, 1, 3)
+
+        layout.addWidget(self.odour_sequences, 0, 3, 5, 3)
+        layout.addWidget(self.protocols, 5, 3, 4, 3)
+
+        layout.addWidget(self.odour_bottles, 0, 6, 5, 3)
+        layout.addWidget(self.odour_chemicals, 5, 6, 4, 3)
 
         self.flow_chart.setMouseTracking(True)
         self.pid_chart.setMouseTracking(True)
@@ -70,7 +75,6 @@ class FlowDataView(QMainWindow):
 
         self.worker.result.connect(self.sequence_complete.emit)
         self.worker.finished.connect(self.work_thread.quit)
-        self.start_button.setEnabled(False)
         self.work_thread.started.connect(self.worker.run)
         self.progress_thread.started.connect(self.progress_worker.run)
         self.progress_thread.finished.connect(self.update_finished_progress_bar)
@@ -80,7 +84,7 @@ class FlowDataView(QMainWindow):
 
  
     def update_finished_progress_bar(self):
-        self.sequence_monitor.progress_bar.setValue(100)
-        self.start_button.setEnabled(True)
+        self.sequence_monitor.progress_bar.setValue(0)
+        self.sequence_monitor.progress_label.setText('Interval')
 
 

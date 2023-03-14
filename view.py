@@ -8,6 +8,7 @@ from odour_chemical_widget import OdourChemicalWidget
 from pid_chart import PidChart
 from sequence_monitor import SequenceMonitor, SequenceProgressWorker
 from play_valve_sequence_worker import PlayValveSequenceWorker
+from sequence_widget import SequenceWidget
 
 class FlowDataView(QMainWindow):
 
@@ -29,6 +30,7 @@ class FlowDataView(QMainWindow):
         self.sequence_monitor.layout.addWidget(self.start_button, 0, 3, 1, 2)
         self.odour_chemicals = OdourChemicalWidget()
         self.odour_bottles = OdourBottleWidget(self.odour_chemicals)
+        self.odour_sequences = SequenceWidget(self.odour_bottles, self.odour_chemicals)
         main_frame = QFrame()
         layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)
@@ -36,8 +38,9 @@ class FlowDataView(QMainWindow):
         layout.addWidget(self.flow_chart, 0, 0, 3, 1)
         layout.addWidget(self.pid_chart, 3, 0, 3, 1)
         layout.addWidget(self.sequence_monitor, 6, 0, 1, 1)
-        layout.addWidget(self.odour_bottles, 0, 1, 3, 1)
-        layout.addWidget(self.odour_chemicals, 0, 2, 3, 1)
+        layout.addWidget(self.odour_bottles, 0, 4, 3.5, 1)
+        layout.addWidget(self.odour_chemicals, 3, 4, 4, 1)
+        layout.addWidget(self.odour_sequences, 0, 2, 3.5, 1)
 
         self.flow_chart.setMouseTracking(True)
         self.pid_chart.setMouseTracking(True)

@@ -81,22 +81,20 @@ class BaseListWidget(QTableWidget):
         self.setRowCount(0)
         self.selected_row = None
         for i_row, row in self.data.iterrows():
-            for i, header in enumerate(self.headers):
-                if header.endswith('?') and row[i] == '':
-                    row[i] = False
             self.insertRow(i_row)
-            for i_col, value in enumerate(row):
+            for i_col, header in enumerate(self.headers):
+                if header.endswith('?') and row.iloc[i_col] == '':
+                    self.data.iloc[i_row, i_col] = False
                 if self.headers[i_col].endswith("?"):
-                    for row in range(self.rowCount()):
-                        checkbox = QStyleOptionButton()
-                        checkbox.rect = self.visualRect(self.model().index(row, i_col))
-                        checkbox.state |= QStyle.State_Enabled
-                        if self.data.iloc[row, i_col]=="True":
-                            checkbox.state |= QStyle.State_On
-                        else:
-                            checkbox.state |= QStyle.State_Off
+                    checkbox = QStyleOptionButton()
+                    checkbox.rect = self.visualRect(self.model().index(i_row, i_col))
+                    checkbox.state |= QStyle.State_Enabled
+                    if self.data.iloc[i_row, i_col]=="True":
+                        checkbox.state |= QStyle.State_On
+                    else:
+                        checkbox.state |= QStyle.State_Off
                 else:
-                    item = QTableWidgetItem(str(value).replace("\n", ""))
+                    item = QTableWidgetItem(str(self.data.iloc[i_row, i_col]).replace("\n", ""))
                     item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                     if self.color_data is not None:
                         color = self.color_data[i_row, i_col]

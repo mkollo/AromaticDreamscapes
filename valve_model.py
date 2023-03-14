@@ -1,10 +1,10 @@
 from matplotlib import pyplot as plt
 import nidaqmx
 import numpy as np
-
+import time
 
 class ValveModel:
-    def __init__(self, sample_rate=10000, acquisition_time=5, pre_sequence_time=0.5, post_sequence_time=0.5, pulse_time=1, back_valve_delay=0.05):        
+    def __init__(self, sample_rate=10000, acquisition_time=10, pre_sequence_time=0.5, post_sequence_time=0.5, pulse_time=2, back_valve_delay=0.05):        
         self.sample_rate = sample_rate
         self.acquisition_samples = int(acquisition_time * self.sample_rate)
         self.back_valve_delay_samples = int(back_valve_delay * self.sample_rate)
@@ -13,8 +13,9 @@ class ValveModel:
         self.pulse_samples = int(pulse_time * self.sample_rate)
         self.cycle_samples = int(0.004 * self.sample_rate)
         self.ttl_bit_samples = int(0.004 * self.sample_rate)
-        self.all_clean_air_valves = [0, 1]
-    
+        self.all_clean_air_valves = [0, 1, 8, 9]
+        # self.all_clean_air_valves = []
+
         self.valves = nidaqmx.Task()
         self.ai = nidaqmx.Task()
 
@@ -23,6 +24,10 @@ class ValveModel:
 
         self.init_clock_and_trigger(self.valves)
         self.init_clock_and_trigger(self.ai)
+        # while True:
+        #     self.play_valve_sequence([12, 12, 12, 12], [0.5, 0.25, 0.8, 0.1], "Test")
+        #     time.sleep(60)
+
 
     def __del__(self):
         self.valves.close()

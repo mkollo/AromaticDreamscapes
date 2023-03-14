@@ -62,15 +62,15 @@ class OdourBottleWidget(ListDataWidget):
                 for j in range(16):                    
                     chemicals_i = self.get_chemicals(i)
                     chemicals_j = self.get_chemicals(j)
-                    if chemicals_i!=['OIL'] and chemicals_j!=['OIL']:
+                    if chemicals_i!=['AIR'] and chemicals_j!=['AIR']:
                         data[i, j] = np.min([data_chemicals[chem_data.loc[:, "Code"] == chemical_i, chem_data.loc[:, "Code"] == chemical_j] for chemical_i in chemicals_i for chemical_j in chemicals_j])
-            data = np.delete(data, np.where([chemicals == ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=0)
-            data = np.delete(data, np.where([chemicals == ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=1)
+            data = np.delete(data, np.where([chemicals == ['AIR'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=0)
+            data = np.delete(data, np.where([chemicals == ['AIR'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=1)
             return data
 
     def plot_distance_matrix(self, labels):
             data = self.get_distance_matrix()
-            labels = labels[[(chemicals != ['OIL']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
+            labels = labels[[(chemicals != ['AIR']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
             fig, ax = plt.subplots(figsize=(6, 6))
             im = ax.imshow(data, cmap='bwr', interpolation='nearest',
                         vmin=np.min(data), vmax=np.max(data))
@@ -97,11 +97,11 @@ class OdourBottleWidget(ListDataWidget):
         data = np.zeros((16, 2))
         for i in range(16):
             chemicals_i = self.get_chemicals(i)
-            if chemicals_i!=['OIL']:
-                data[i, 0] = np.mean([data_chemicals[chem_data.loc[:, "Code"] == chemical_i, 0] for chemical_i in chemicals_i])
-                data[i, 1] = np.mean([data_chemicals[chem_data.loc[:, "Code"] == chemical_i, 1] for chemical_i in chemicals_i])
+            if chemicals_i!=['AIR']:
+                data[i, 0] = np.mean([np.mean(data_chemicals[chem_data.loc[:, "Code"] == chemical_i, 0]) for chemical_i in chemicals_i])
+                data[i, 1] = np.mean([np.mean(data_chemicals[chem_data.loc[:, "Code"] == chemical_i, 1]) for chemical_i in chemicals_i])
         if drop_oil:
-            data = np.delete(data, np.where([chemicals == ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=0)
+            data = np.delete(data, np.where([chemicals == ['AIR'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=0)
         return data
 
     def get_bottle_colors(self, drop_oil=False):        
@@ -126,7 +126,7 @@ class OdourBottleWidget(ListDataWidget):
 
     def plot_point_map(self, labels):
         data = self.get_point_map()
-        labels = labels[[(chemicals != ['OIL']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
+        labels = labels[[(chemicals != ['AIR']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
         fig, ax = plt.subplots(figsize=(6, 6))
         im = ax.scatter(data[:, 0], data[:, 1], s=220, c=self.generate_smooth_colors(data), edgecolors='black', linewidths=0.5)
         for i, label in enumerate(labels):
@@ -180,7 +180,7 @@ class OdourBottleWidget(ListDataWidget):
         steps = 200
         errors = np.zeros((self.base_list.data.shape[0], steps))
         ppms = np.linspace(0.1, 200, steps)        
-        correct_rows = np.where([(chemicals != ['OIL']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(self.base_list.data.shape[0])]])[0]
+        correct_rows = np.where([(chemicals != ['AIR']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(self.base_list.data.shape[0])]])[0]
         for row in correct_rows:
             chemical_data = self.get_chemical_data(row)
             chemical_data["Max_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 4

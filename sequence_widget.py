@@ -35,14 +35,17 @@ class SequenceWidget(ListDataWidget):
         self.base_list.resizeColumnsToContents()
         self.base_list.update_widget()
         self.update_sequence_colors()
-        print(self.get_sequence_bottles())
 
     def get_sequence_bottles(self):
         sequence_bottles = []
         for seq_idx, seq_row in self.base_list.data.iterrows():
             for bottle_idx, bottle_row in self.odour_bottle_widget.base_list.data.iterrows():
-                if bottle_row["Name"] in seq_row.values:
-                    sequence_bottles.append(bottle_row)
+                for bottle_num, bottle_name in enumerate(seq_row[1:5], 1):  # Start enumeration at 1
+                    if bottle_row["Name"] == bottle_name:
+                        row_with_seq_and_bottle_num = bottle_row.copy()
+                        row_with_seq_and_bottle_num["Sequence"] = seq_idx + 1  # Add 1 to make it 1-based index
+                        row_with_seq_and_bottle_num["Bottle"] = bottle_num
+                        sequence_bottles.append(row_with_seq_and_bottle_num)
         return pd.DataFrame(sequence_bottles)
 
     def update_sequence_colors(self):
@@ -85,6 +88,51 @@ class SequenceWidget(ListDataWidget):
             else:
                 self.add_bottle(source_row, target_row)
             # self.drop_bottle_from_bottle(source_row, target_row)
+
+    def get_chemical_data(self):
+        sequence_bottles = self.get_sequence_bottles()
+        nested_list = [chemical.split(",") for chemical in sequence_bottles["Chemicals"]]
+        chemicals = [item.strip() for sublist in nested_list for item in sublist]
+        return pd.concat(self.chemical_widget.get_chemical_data(chemicals), ignore_index=True)
+
+    def get_ideal_ppm(self):
+        steps = 500
+        ppms = np.linspace(0.1, 200, steps)
+        all_chemical_data = self.get_chemical_data()
+        errors = np.zeros((all_chemical_data.shape[0], steps))
+        for row in range(all_chemical_data.shape[0]):
+            chemical_data = all_chemical_data.iloc[row,:]
+            chemical_data["Max_ppm"] = float(chemical_data["Saturated_ppm"]) / 4
+            chemical_data["Min_ppm"] = float(chemical_data["Saturated_ppm"]) / 40
+            for si in range(steps):
+                errors[row, si] = max(np.clip(np.max(chemical_data["Min_ppm"]/ppms[si]),1,np.inf), np.clip((ppms[si]/(np.min(chemical_data["Max_ppm"])+1e-6)),1,np.inf))
+        errors_median = np.median(errors, axis=0)
+        errors_min = np.min(errors, axis=0)        
+        errors_max = np.max(errors, axis=0)
+        ideal_ppm = ppms[np.argmin(errors_max)]
+        return ppms, errors_median, errors_min, errors_max, ideal_ppm
+        
+    def plot_ideal_ppm(self):
+        ppms, errors_median, errors_min, errors_max, ideal_ppm = self.get_ideal_ppm()
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.fill_between(ppms, errors_min, errors_max, color="lightblue")
+        ax.plot(ppms, errors_median, color="navy")
+        ax.vlines(ideal_ppm, min(errors_min), max(errors_max), color="darkgrey", linestyle="dashed")       
+        ax.text(ideal_ppm, ax.get_ylim()[1], f'{ideal_ppm:.2f} ppm', ha='center', va='bottom', color='darkgrey')
+        ax.set_xscale("log")
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.set_yscale("log")
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.set_xlabel("Target concentration (ppm)")
+        ax.set_ylabel("Error (actual / target concentration)")
+        canvas = FigureCanvas(fig)
+        dialog = QDialog()
+        dialog.setWindowTitle("Closest match to ideal ppm (min/max/median)")
+        layout = QVBoxLayout()
+        layout.addWidget(canvas)
+        dialog.setLayout(layout)
+        dialog.resize(800, 800)
+        dialog.exec_()        
 
 
 class NameInputDialog(QDialog):

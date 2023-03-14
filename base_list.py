@@ -1,4 +1,3 @@
-import pickle
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QPoint, QMimeData
 from PyQt5.QtGui import QColor, QPalette, QPainter, QBrush, QDrag
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget, QStyledItemDelegate, QStyle, QStyleOptionButton, QApplication
@@ -49,12 +48,13 @@ class BaseListWidget(QTableWidget):
         self.setHorizontalHeader(NoHoverHeaderView(Qt.Horizontal, self))
         self.setVerticalHeader(NoHoverHeaderView(Qt.Vertical, self))
         delegate = RowHoverDelegate(self)
+        delegate.hovered.connect(self._on_row_hovered)
         self.setItemDelegate(delegate)
         self.setMouseTracking(True)
         self.viewport().setMouseTracking(True)
         self.viewport().installEventFilter(self)
         self.clicked.connect(self._on_row_clicked)
-        self.doubleClicked.connect(self._on_row_double_clicked)
+        self.doubleClicked.connect(self._on_row_double_clicked)        
 
         title_row = TitleItem("")
         self.setItem(0, 0, title_row)
@@ -70,7 +70,8 @@ class BaseListWidget(QTableWidget):
         self.row_clicked.connect(lambda row: select_callback(row))
         self.row_double_clicked.connect(lambda row: double_select_callback(row))
         self.row_dropped.connect(lambda source_id, source_row, target_row: drop_callback(source_id, source_row, target_row))
-
+        self.drag_start_pos = -1
+        
     def update_widget(self):
         self.setRowCount(0)
         self.selected_row = None
@@ -139,19 +140,12 @@ class BaseListWidget(QTableWidget):
                         checkbox_rect.moveTopLeft(QPoint(x, y))
                         checkbox.rect = checkbox_rect
                         self.style().drawControl(QStyle.CE_CheckBox, checkbox, painter, self)
-
             if self.hover_row >= 0:
-                # Calculate the rect of the hovered row
                 rect = self.visualRect(self.model().index(self.hover_row, 0))
-
-                # Draw a blue background for the entire row
                 if (self.hover_row == self.selected_row):
                     painter.fillRect(rect, QColor(selected_hover_color))
                 else:
                     painter.fillRect(rect, QColor(hover_color))
-
-            
-                # Draw the text for each cell in the row
                 for col in range(self.columnCount()):
                     rect = self.visualRect(self.model().index(self.hover_row, col))
                     text = self.model().data(self.model().index(self.hover_row, col))
@@ -181,6 +175,9 @@ class BaseListWidget(QTableWidget):
                     drag.setPixmap(pixmap)
                     drag.setHotSpot(event.pos() - self.visualRect(self.model().index(selected_row+1, 0)).topLeft()) # Set the hot spot to the mouse cursor position within the pixmap
                     drag.exec_()
+        else:
+            if self.rect().contains(event.pos()):
+                self._on_row_hovered(self.rowAt(event.pos().y()))          
         super().mouseMoveEvent(event)
 
     def dropEvent(self, event):       
@@ -210,17 +207,17 @@ class BaseListWidget(QTableWidget):
         return row_data
 
     def mousePressEvent(self, event):
+        
         index = self.indexAt(event.pos())
+        row = index.row() 
+        col = index.column()
         if not index.isValid():
             super().mousePressEvent(event)
             return
-        if self.headers[index.column()].endswith("?"):
-            if event.button() == Qt.LeftButton:
-                # Toggle the state of the checkbox
-                row = index.row()
-                col = index.column()
-                state = self.data.iloc[row, col]
-                self.data.iloc[row, col] = not state
+        if self.headers[col].endswith("?"):
+            if event.button() == Qt.LeftButton:                
+                state =  self.data.loc[row, self.headers[col]] == "True"
+                self.data.loc[row, self.headers[col]] = str(not state)
                 self.viewport().update()
                 return
         if event.button() == Qt.LeftButton:
@@ -302,24 +299,20 @@ class BaseListWidget(QTableWidget):
         return widget
 
     def _on_row_hovered(self, index):
-        self.hover_row = index.row()
+        
+        self.hover_row = index
         self.viewport().update()  # Schedule a repaint of the viewport   
 
     def eventFilter(self, source, event):
         if source is self.viewport() and event.type() == QEvent.Paint:
             if self.mouse_pos:
-                # Get the index of the cell under the mouse cursor
                 index = self.indexAt(self.mouse_pos)
-
                 if index.isValid():
-                    # Emit a signal when the hovered row changes
                     row = index.row()
                     if row != self.hover_row:
                         self._on_row_hovered(index)
-
             # Reset mouse position
             self.mouse_pos = None
-
         return super().eventFilter(source, event)
 
 class TitleItem(QTableWidgetItem):
@@ -338,6 +331,8 @@ class NoHoverHeaderView(QHeaderView):
         pass
 
 class RowHoverDelegate(QStyledItemDelegate):
+    hovered = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 

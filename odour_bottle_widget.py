@@ -135,24 +135,28 @@ class OdourBottleWidget(ListDataWidget):
         return pd.concat(self.chemical_widget.get_chemical_data(chemicals), ignore_index=True)
 
     def update_equal_ratios(self, row):
-        chemicals = self.get_chemicals(row)
+        chemicals = self.get_chemicals(row)        
         if len(chemicals) == 1:
             self.base_list.data.loc[row, "Ratios"] = "1"
         else:
             self.base_list.data.loc[row, "Ratios"] = ", ".join(["{:.2g}".format(1.0/len(chemicals))] * len(chemicals))
 
     def plot_ideal_ppm(self):
-        ppms, matches_median, matches_min, matches_max, ideal_ppm = self.get_ideal_ppm()
+        ppms, errors_median, errors_min, errors_max, ideal_ppm = self.get_ideal_ppm()
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.fill_between(ppms, matches_min, matches_max, color="lightblue")
-        ax.plot(ppms, matches_median, color="navy")
-        ax.vlines(ideal_ppm, min(matches_min), max(matches_max), color="darkgrey", linestyle="dashed")       
+        ax.fill_between(ppms, errors_min, errors_max, color="lightblue")
+        ax.plot(ppms, errors_median, color="navy")
+        ax.vlines(ideal_ppm, min(errors_min), max(errors_max), color="darkgrey", linestyle="dashed")       
         ax.text(ideal_ppm, ax.get_ylim()[1], f'{ideal_ppm:.2f} ppm', ha='center', va='bottom', color='darkgrey')
         ax.set_xscale("log")
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.set_yscale("log")
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.set_xlabel("Target concentration (ppm)")
+        ax.set_ylabel("Error (actual / target concentration)")
         canvas = FigureCanvas(fig)
         dialog = QDialog()
-        dialog.setWindowTitle("Closest match to ideal ppm")
+        dialog.setWindowTitle("Closest match to ideal ppm (min/max/median)")
         layout = QVBoxLayout()
         layout.addWidget(canvas)
         dialog.setLayout(layout)
@@ -160,21 +164,22 @@ class OdourBottleWidget(ListDataWidget):
         dialog.exec_()        
 
     def get_ideal_ppm(self):
-        steps = 50
-        matches = np.zeros((self.base_list.data.shape[0], steps))
-        log_ppms = np.linspace(-1, 2, steps)
-        for row in range(self.base_list.data.shape[0]):
+        steps = 200
+        errors = np.zeros((self.base_list.data.shape[0], steps))
+        ppms = np.linspace(0.1, 200, steps)        
+        correct_rows = np.where([chemicals != ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(self.base_list.data.shape[0])]])[0]
+        for row in correct_rows:
             chemical_data = self.get_chemical_data(row)
             chemical_data["Max_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 4
             chemical_data["Min_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 40
             for si in range(steps):
-                matches[row, si] = (np.clip(np.max(np.log10(chemical_data["Min_ppm"]+1e-6))/log_ppms[si], 0, 1) + np.clip(log_ppms[si]/np.min(np.log10(chemical_data["Max_ppm"]+1e-6)), 0, 1))/2
-        ppms = 10**np.linspace(0, 2, steps)
-        matches_median = np.median(matches, axis=0)
-        matches_min = np.percentile(matches, 30, axis=0)
-        matches_max = np.percentile(matches, 70, axis=0)
-        ideal_ppm = ppms[np.argmax(matches_min)]
-        return ppms, matches_median, matches_min, matches_max, ideal_ppm
+                errors[row, si] = max(np.clip(np.max(chemical_data["Min_ppm"]/ppms[si]),1,np.inf), np.clip((ppms[si]/(np.min(chemical_data["Max_ppm"])+1e-6)),1,np.inf))
+        errors_median = np.median(errors, axis=0)
+        errors_min = np.min(errors, axis=0)
+        print(errors)
+        errors_max = np.max(errors, axis=0)
+        ideal_ppm = ppms[np.argmin(errors_max)]
+        return ppms, errors_median, errors_min, errors_max, ideal_ppm
 
     def update_ppms(self, row):
         chemical_data = self.get_chemical_data(row)

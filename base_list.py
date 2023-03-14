@@ -129,72 +129,44 @@ class BaseListWidget(QTableWidget):
 
     def paintEvent(self, event):
         super().paintEvent(event)
-        painter = QPainter(self.viewport())
-
-        # Get the rectangle that needs to be updated
-        update_rect = event.rect()
-
+        painter = QPainter(self.viewport())        
         for col in range(self.columnCount()):
             for row in range(self.rowCount()):
                 index = self.model().index(row, col)
-                cell_rect = self.visualRect(index)
-
-                # Only redraw cells that intersect with the update rectangle
-                if cell_rect.intersects(update_rect):
-                    if self.headers[col].endswith("?"):
-                        for row in range(self.rowCount()):
-                            checkbox = QStyleOptionButton()
-                            checkbox.initFrom(self)
-                            checkbox.rect = self.visualRect(self.model().index(row, col))
-                        if self.data.iloc[row, col] == "True":
-                            checkbox.state |= QStyle.State_On
+                if self.color_data is not None:                                        
+                    color = self.color_data[row, col]
+                    if color == "":
+                        if self.hover_row == row:
+                            color = hover_color if self.selected_row != row else selected_hover_color
+                        elif self.selected_row == row:
+                            color = selected_color
                         else:
-                            checkbox.state |= QStyle.State_Off
-                        # Center the checkbox within the cell
-                        checkbox_rect = self.style().subElementRect(QStyle.SE_CheckBoxIndicator, checkbox)
-                        checkbox_size = checkbox_rect.size()
-                        cell_rect = self.visualRect(self.model().index(row, col))
-                        cell_size = cell_rect.size()
-                        x = cell_rect.left() + (cell_size.width() - checkbox_size.width()) / 2
-                        y = cell_rect.top() + (cell_size.height() - checkbox_size.height()) / 2
-                        checkbox_rect.moveTopLeft(QPoint(x, y))
-                        checkbox.rect = checkbox_rect
-                        self.style().drawControl(QStyle.CE_CheckBox, checkbox, painter, self)
-                else:
-                    item = self.item(row, col)
-                    if self.color_data is not None:
-                        color = self.color_data[row, col]
-                        if color != "":
-                            painter.save()
-                            painter.setBrush(QBrush(QColor(color)))
-                            painter.setPen(Qt.NoPen)
-                            painter.drawRect(self.visualRect(index))
-                            painter.restore()
-
-                    if item is not None and row != self.hover_row:  # Add this condition
-                        painter.drawText(self.visualRect(index), Qt.AlignVCenter | Qt.AlignLeft, item.text())
-            if self.hover_row >= 0:
-                for col in range(self.columnCount()):
-                    rect = self.visualRect(self.model().index(self.hover_row, col))
-                    if self.hover_row == self.selected_row:
-                        painter.fillRect(rect, QColor(selected_hover_color))
+                            color = "#FFFFFF"            
+                    painter.setBrush(QBrush(QColor(color)))
+                    painter.setPen(Qt.NoPen)
+                    painter.drawRect(self.visualRect(index))
+                    cell_rect = self.visualRect(index)
+                if self.headers[col].endswith("?"):
+                    checkbox = QStyleOptionButton()
+                    checkbox.initFrom(self)
+                    checkbox.rect = self.visualRect(self.model().index(row, col))
+                    if self.data.iloc[row, col] == "True":
+                        checkbox.state |= QStyle.State_On
                     else:
-                        painter.fillRect(rect, QColor(hover_color))
-
-                    if self.color_data is not None:
-                        index = self.model().index(self.hover_row, col)  # Update the index variable
-                        color = self.color_data[self.hover_row, col]
-                        if color != "":
-                            painter.save()
-                            painter.setBrush(QBrush(QColor(color)))
-                            painter.setPen(Qt.NoPen)
-                            painter.drawRect(self.visualRect(index))
-                            painter.restore()
-
-                    text = self.model().data(self.model().index(self.hover_row, col))
-                    painter.drawText(rect.translated(3, 0), Qt.AlignVCenter | Qt.AlignLeft, text)
-
-
+                        checkbox.state |= QStyle.State_Off
+                    checkbox_rect = self.style().subElementRect(QStyle.SE_CheckBoxIndicator, checkbox)
+                    checkbox_size = checkbox_rect.size()
+                    cell_rect = self.visualRect(self.model().index(row, col))
+                    cell_size = cell_rect.size()
+                    x = cell_rect.left() + (cell_size.width() - checkbox_size.width()) / 2
+                    y = cell_rect.top() + (cell_size.height() - checkbox_size.height()) / 2
+                    checkbox_rect.moveTopLeft(QPoint(x, y))
+                    checkbox.rect = checkbox_rect
+                    self.style().drawControl(QStyle.CE_CheckBox, checkbox, painter, self)
+                else:                   
+                    painter.setPen(Qt.black)
+                    painter.drawText(self.visualRect(index), Qt.AlignCenter, self.data.iloc[row, col])
+              
                 
     def dragEnterEvent(self, event):
         event.acceptProposedAction()

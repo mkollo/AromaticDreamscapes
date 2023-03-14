@@ -2,13 +2,12 @@ import csv
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.colors as rgb2hex
 import numpy as np
 import pandas as pd
 from list_data_widget import ListDataWidget
 from skimage.color import lab2rgb
-from colormath.color_objects import LabColor, sRGBColor
 from colormath.color_conversions import convert_color
+import matplotlib.ticker as ticker
 
 
 from odour_chemical_widget import OdourChemicalWidget
@@ -23,8 +22,10 @@ class OdourBottleWidget(ListDataWidget):
         headers = ["Name", "Chemicals", "Ratios", "Min ppm", "Max ppm", "CV ppm", "Error?"]
         extra_buttons = [
             {'icon': 'distancematrix', 'callback': lambda: self.plot_distance_matrix(self.get_column("Name"))}, 
-            {'icon': 'pointmap', 'callback': lambda: self.plot_point_map(self.get_column("Name"))}
+            {'icon': 'pointmap', 'callback': lambda: self.plot_point_map(self.get_column("Name"))},
+            {'icon': 'optimumppm', 'callback': lambda: self.plot_ideal_ppm()}
         ]
+
         super().__init__("Odour Bottles", 
         double_select_callback=lambda row: self.show_ratio_edit_dialog(row), 
         drop_callback=lambda source_id, source_row, target_row: self.drop_component(source_id, source_row, target_row),
@@ -140,7 +141,40 @@ class OdourBottleWidget(ListDataWidget):
         else:
             self.base_list.data.loc[row, "Ratios"] = ", ".join(["{:.2g}".format(1.0/len(chemicals))] * len(chemicals))
 
+    def plot_ideal_ppm(self):
+        ppms, matches_median, matches_min, matches_max, ideal_ppm = self.get_ideal_ppm()
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.fill_between(ppms, matches_min, matches_max, color="lightblue")
+        ax.plot(ppms, matches_median, color="navy")
+        ax.vlines(ideal_ppm, min(matches_min), max(matches_max), color="darkgrey", linestyle="dashed")       
+        ax.text(ideal_ppm, ax.get_ylim()[1], f'{ideal_ppm:.2f} ppm', ha='center', va='bottom', color='darkgrey')
+        ax.set_xscale("log")
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        canvas = FigureCanvas(fig)
+        dialog = QDialog()
+        dialog.setWindowTitle("Closest match to ideal ppm")
+        layout = QVBoxLayout()
+        layout.addWidget(canvas)
+        dialog.setLayout(layout)
+        dialog.resize(800, 800)
+        dialog.exec_()        
 
+    def get_ideal_ppm(self):
+        steps = 50
+        matches = np.zeros((self.base_list.data.shape[0], steps))
+        log_ppms = np.linspace(-1, 2, steps)
+        for row in range(self.base_list.data.shape[0]):
+            chemical_data = self.get_chemical_data(row)
+            chemical_data["Max_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 4
+            chemical_data["Min_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 40
+            for si in range(steps):
+                matches[row, si] = (np.clip(np.max(np.log10(chemical_data["Min_ppm"]+1e-6))/log_ppms[si], 0, 1) + np.clip(log_ppms[si]/np.min(np.log10(chemical_data["Max_ppm"]+1e-6)), 0, 1))/2
+        ppms = 10**np.linspace(0, 2, steps)
+        matches_median = np.median(matches, axis=0)
+        matches_min = np.percentile(matches, 30, axis=0)
+        matches_max = np.percentile(matches, 70, axis=0)
+        ideal_ppm = ppms[np.argmax(matches_min)]
+        return ppms, matches_median, matches_min, matches_max, ideal_ppm
 
     def update_ppms(self, row):
         chemical_data = self.get_chemical_data(row)

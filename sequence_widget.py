@@ -20,7 +20,7 @@ class SequenceWidget(ListDataWidget):
         self.map_file = "resources/canberra_all_mds.csv"
 
         ignore_buttons = ["plus"]
-        headers = ["Name", "O1", "O2", "O3", "O4", "Reward?"]
+        headers = ["Name", "O1", "O2", "O3", "O4", "Reward?", "On?"]
         extra_buttons = [
             {'icon': 'optimumppm', 'callback': lambda: self.plot_ideal_ppm()}
         ]
@@ -30,11 +30,26 @@ class SequenceWidget(ListDataWidget):
         headers=headers, ignore_buttons=ignore_buttons,
         extra_buttons=extra_buttons)
 
-        # self.sequences_file = "resources/sequences.tsv"
-        # self.load_data_from_file(self.sequences_filesequences_file, prompt=False)
+        self.sequences_file = "resources/sequences.tsv"
+        self.load_data_from_file(self.sequences_file, prompt=False)        
         self.base_list.resizeColumnsToContents()
         self.base_list.update_widget()
-       
+        self.update_sequence_colors()
+
+    def update_sequence_colors(self):
+        color_data = np.empty(self.base_list.data.shape, dtype=object)
+        color_data[:] = ""
+        for i in range(self.base_list.data.shape[0]):
+            for j in range(1, 5):
+                name = self.base_list.data.iloc[i, j]
+                if name != "":
+                    color_data[i, j] = self.odour_bottle_widget.get_color(name)
+
+        self.base_list.set_color_data(color_data)
+
+    def load_data_from_file(self, file_path, prompt=True):
+        return super().load_data_from_file(file_path, prompt)
+
     def get_last_emtpy_slot(self, row):
         for i in range(1, 5):
             if self.base_list.data.iloc[row, i] == "":

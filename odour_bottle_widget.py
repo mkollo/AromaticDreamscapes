@@ -37,6 +37,13 @@ class OdourBottleWidget(ListDataWidget):
         self.load_data_from_file(self.odour_bottles_file, prompt=False)
         self.update_bottle_colors()     
 
+    def get_color(self, name):
+        if name == "AIR":
+            return [0, 0, 0]
+        else:
+            row_index = self.base_list.data.loc[self.base_list.data['Name'] == name].index[0]
+            return self.get_bottle_colors()[row_index]
+
     def update_bottle_colors(self):
         color_data = np.empty(self.base_list.data.shape, dtype=object)
         color_data[:] = ""

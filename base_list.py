@@ -78,8 +78,7 @@ class BaseListWidget(QTableWidget):
         self.update_widget()
 
     def update_widget(self):
-        self.setRowCount(0)
-        self.selected_row = None
+        self.setRowCount(0)       
         for i_row, row in self.data.iterrows():
             self.insertRow(i_row)
             for i_col, header in enumerate(self.headers):
@@ -105,6 +104,7 @@ class BaseListWidget(QTableWidget):
             
     def add_row(self, row_data):
         self.data.loc[len(self.data)] = row_data
+        self.data.reset_index()
         i_row = self.rowCount()
         self.insertRow(i_row)
         for i_col, value in enumerate(row_data):
@@ -278,26 +278,18 @@ class BaseListWidget(QTableWidget):
     def move_selected_item_up(self):
         if self.selected_row is not None:
             row = self.selected_row
-            if row < 1:
-                return
-            new_row = row - 1
-            self.insert_row_data(new_row, self.get_row_data(row))
-            self.remove_row_data(row + 1)
-            self.select_row(new_row)
-            self.selected_row = new_row
-            self.data = self.data.move(row, new_row)  # Move the row in the dataframe
+            if row != 0:
+                self.data.loc[row-1,:], self.data.loc[row,:] = self.data.loc[row,:].copy(), self.data.loc[row-1,:].copy()
+                self.selected_row = row - 1
+                self.update_widget()
 
     def move_selected_item_down(self):
         if self.selected_row is not None:
             row = self.selected_row
-            if row >= self.rowCount() - 1:
-                return
-            new_row = row + 2
-            self.insert_row_data(new_row, self.get_row_data(row))
-            self.remove_row_data(row)
-            self.select_row(new_row - 1)
-            self.selected_row = new_row - 1
-            self.data = self.data.move(row, new_row)  # Move the row in the dataframe
+            if row != self.data.shape[0]-1:
+                self.data.loc[row+1,:], self.data.loc[row,:] = self.data.loc[row,:].copy(), self.data.loc[row+1,:].copy()                
+                self.selected_row = row + 1
+                self.update_widget()
 
     def get_selected_row(self):
         return self.selected_row

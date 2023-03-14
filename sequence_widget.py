@@ -19,7 +19,7 @@ class SequenceWidget(ListDataWidget):
         self.distance_file = "resources/canberra_all.csv"
         self.map_file = "resources/canberra_all_mds.csv"
 
-        ignore_buttons = ["plus", "minus", "up", "down"]
+        ignore_buttons = ["plus"]
         headers = ["Name", "O1", "O2", "O3", "O4", "Reward?"]
         extra_buttons = [
             {'icon': 'optimumppm', 'callback': lambda: self.plot_ideal_ppm()}
@@ -44,7 +44,7 @@ class SequenceWidget(ListDataWidget):
     def add_bottle(self, source_row, target_row):
         col = self.get_last_emtpy_slot(target_row)
         if col >= 0:
-            self.base_list.data.loc[target_row, col] = self.odour_bottle_widget.base_list.data.loc[source_row, "Name"]
+            self.base_list.data.loc[target_row, self.headers[col]] = self.odour_bottle_widget.base_list.data.loc[source_row, "Name"]
             self.base_list.update_widget()
         
     def add_sequence(self, source_row):
@@ -53,7 +53,7 @@ class SequenceWidget(ListDataWidget):
             name = dialog.get_name()
             self.base_list.add_row([name, "", "", "", "", ""])
             self.add_bottle(source_row, self.base_list.data.shape[0] - 1)
-    
+
     def drop_bottle(self, source_id, source_row, target_row):
         if source_id == id(self.odour_bottle_widget):
             if target_row < 0:

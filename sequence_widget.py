@@ -10,11 +10,12 @@ from colormath.color_conversions import convert_color
 import matplotlib.ticker as ticker
 
 
-from odour_chemical_widget import OdourChemicalWidget
+from odour_bottle_widget import OdourBottleWidget
 
 class OdourBottleWidget(ListDataWidget):
-    def __init__(self, chemical_widget: OdourChemicalWidget):
-        self.chemical_widget = chemical_widget                
+    def __init__(self, odour_bottle_widget: OdourBottleWidget, chemical_widget: OdourBottleWidget):
+        self.odour_bottle_widget = odour_bottle_widget
+        self.chemical_widget = chemical_widget
         self.distance_file = "resources/canberra_all.csv"
         self.map_file = "resources/canberra_all_mds.csv"
 
@@ -23,8 +24,7 @@ class OdourBottleWidget(ListDataWidget):
         extra_buttons = [
             {'icon': 'distancematrix', 'callback': lambda: self.plot_distance_matrix(self.get_column("Name"))}, 
             {'icon': 'pointmap', 'callback': lambda: self.plot_point_map(self.get_column("Name"))},
-            {'icon': 'optimumppm', 'callback': lambda: self.plot_ideal_ppm()},
-            {'icon': 'minus', 'callback': lambda: self.empty_bottle()}
+            {'icon': 'optimumppm', 'callback': lambda: self.plot_ideal_ppm()}
         ]
 
         super().__init__("Odour Bottles", 
@@ -35,22 +35,11 @@ class OdourBottleWidget(ListDataWidget):
 
         self.odour_bottles_file = "resources/odour_bottles.tsv"
         self.load_data_from_file(self.odour_bottles_file, prompt=False)
-        self.update_bottle_colors()     
-
-    def update_bottle_colors(self):
         color_data = np.empty(self.base_list.data.shape, dtype=object)
         color_data[:] = ""
         color_data[:,0] = self.get_bottle_colors()
-        self.base_list.set_color_data(color_data)
+        self.base_list.set_color_data(color_data)        
 
-    def empty_bottle(self):
-        row = self.base_list.selected_row
-        if row!=None:
-            self.base_list.data.iloc[row, 1] = ""
-            self.update_equal_ratios(row)
-            self.update_ppms(row)
-            self.base_list.update_widget()        
-            self.update_bottle_colors()
 
     def get_distance_matrix(self):
             chem_data = self.chemical_widget.base_list.data.iloc[1:, :]
@@ -70,7 +59,7 @@ class OdourBottleWidget(ListDataWidget):
 
     def plot_distance_matrix(self, labels):
             data = self.get_distance_matrix()
-            labels = labels[[(chemicals != ['OIL']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
+            labels = labels[[chemicals != ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
             fig, ax = plt.subplots(figsize=(6, 6))
             im = ax.imshow(data, cmap='bwr', interpolation='nearest',
                         vmin=np.min(data), vmax=np.max(data))
@@ -109,9 +98,9 @@ class OdourBottleWidget(ListDataWidget):
 
     def generate_smooth_colors(self, coords):
         def get_color_at_position(x, y):
-            r = np.nan_to_num(self.start_color[0] + (self.end_color[0] - self.start_color[0]) * x)
-            g = np.nan_to_num(self.start_color[1] + (self.end_color[1] - self.start_color[1]) * y * (1 - x))
-            b = np.nan_to_num(self.start_color[2] + (self.end_color[2] - self.start_color[2]) * (1 - x) * (1 - y))
+            r = self.start_color[0] + (self.end_color[0] - self.start_color[0]) * x
+            g = self.start_color[1] + (self.end_color[1] - self.start_color[1]) * y * (1 - x)
+            b = self.start_color[2] + (self.end_color[2] - self.start_color[2]) * (1 - x) * (1 - y)
             return (r, g, b)
         x, y = coords[:, 0], coords[:, 1]
         x = (x - np.min(x)) / (np.max(x) - np.min(x))
@@ -119,14 +108,13 @@ class OdourBottleWidget(ListDataWidget):
         self.start_color = (0.2, 0.6, 1)
         self.end_color = (1, 1, 0)
         rgb = [get_color_at_position(x[i], y[i]) for i in range(coords.shape[0])]
-
         hex_colors = ['#' + ''.join([format(int(c*255), '02x') for c in rgb[i]]) for i in range(coords.shape[0])]
         return hex_colors
 
 
     def plot_point_map(self, labels):
         data = self.get_point_map()
-        labels = labels[[(chemicals != ['OIL']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
+        labels = labels[[chemicals != ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(len(labels))]]]
         fig, ax = plt.subplots(figsize=(6, 6))
         im = ax.scatter(data[:, 0], data[:, 1], s=220, c=self.generate_smooth_colors(data), edgecolors='black', linewidths=0.5)
         for i, label in enumerate(labels):
@@ -180,7 +168,7 @@ class OdourBottleWidget(ListDataWidget):
         steps = 200
         errors = np.zeros((self.base_list.data.shape[0], steps))
         ppms = np.linspace(0.1, 200, steps)        
-        correct_rows = np.where([(chemicals != ['OIL']) and (chemicals != ['']) for chemicals in [self.get_chemicals(i) for i in range(self.base_list.data.shape[0])]])[0]
+        correct_rows = np.where([chemicals != ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(self.base_list.data.shape[0])]])[0]
         for row in correct_rows:
             chemical_data = self.get_chemical_data(row)
             chemical_data["Max_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 4
@@ -198,9 +186,9 @@ class OdourBottleWidget(ListDataWidget):
         chemical_data = self.get_chemical_data(row)
         chemical_data["Max_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 4
         chemical_data["Min_ppm"] = chemical_data["Saturated_ppm"].astype(float) / 40        
-        self.base_list.data.loc[row, "Min ppm"] = "{:.2f}".format(np.nan_to_num(chemical_data["Min_ppm"].mean()))
-        self.base_list.data.loc[row, "Max ppm"] = "{:.2f}".format(np.nan_to_num(chemical_data["Max_ppm"].mean()))
-        self.base_list.data.loc[row, "CV ppm"] = "{:.0f} %".format(np.nan_to_num(chemical_data["Saturated_ppm"].astype(float).std()/chemical_data["Saturated_ppm"].astype(float).mean()*100))
+        self.base_list.data.loc[row, "Min ppm"] = "{:.2f}".format(chemical_data["Min_ppm"].mean())
+        self.base_list.data.loc[row, "Max ppm"] = "{:.2f}".format(chemical_data["Max_ppm"].mean())
+        self.base_list.data.loc[row, "CV ppm"] = "{:.0f} %".format(chemical_data["Saturated_ppm"].astype(float).std()/chemical_data["Saturated_ppm"].astype(float).mean()*100)
         
     def add_chemical(self, row, chemical):
         chemicals = self.get_chemicals(row)
@@ -213,7 +201,6 @@ class OdourBottleWidget(ListDataWidget):
         self.update_equal_ratios(row)
         self.update_ppms(row)
         self.base_list.update_widget()        
-        self.update_bottle_colors()
 
     def drop_component(self, source_id, source_row, target_row):
         if source_id == id(self.chemical_widget):

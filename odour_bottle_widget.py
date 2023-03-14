@@ -34,7 +34,10 @@ class OdourBottleWidget(ListDataWidget):
 
         self.odour_bottles_file = "resources/odour_bottles.tsv"
         self.load_data_from_file(self.odour_bottles_file, prompt=False)
-        self.base_list.update_widget()        
+        color_data = np.empty(self.base_list.data.shape, dtype=object)
+        color_data[:] = ""
+        color_data[:,0] = self.get_bottle_colors()
+        self.base_list.set_color_data(color_data)        
 
 
     def get_distance_matrix(self):
@@ -89,11 +92,8 @@ class OdourBottleWidget(ListDataWidget):
             data = np.delete(data, np.where([chemicals == ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(16)]])[0], axis=0)
         return data
 
-    def get_bottle_colors(self, drop_oil=True):
-        sat_ppm = self.get_point_map("Max ppm")
-        if drop_oil:
-            sat_ppm = sat_ppm[[chemicals != ['OIL'] for chemicals in [self.get_chemicals(i) for i in range(len(sat_ppm))]]]
-        return sat_ppm
+    def get_bottle_colors(self, drop_oil=False):        
+        return self.generate_smooth_colors(self.get_point_map(drop_oil=drop_oil))
 
     def generate_smooth_colors(self, coords):
         def get_color_at_position(x, y):
@@ -176,7 +176,7 @@ class OdourBottleWidget(ListDataWidget):
                 errors[row, si] = max(np.clip(np.max(chemical_data["Min_ppm"]/ppms[si]),1,np.inf), np.clip((ppms[si]/(np.min(chemical_data["Max_ppm"])+1e-6)),1,np.inf))
         errors_median = np.median(errors, axis=0)
         errors_min = np.min(errors, axis=0)
-        print(errors)
+        
         errors_max = np.max(errors, axis=0)
         ideal_ppm = ppms[np.argmin(errors_max)]
         return ppms, errors_median, errors_min, errors_max, ideal_ppm

@@ -12,11 +12,12 @@ class BaseListWidget(QTableWidget):
     row_double_clicked = pyqtSignal(int)
     row_dropped = pyqtSignal(int, int, int)
 
-    def __init__(self, headers, select_callback, double_select_callback, drop_callback, parent=None):
+    def __init__(self, headers, select_callback, double_select_callback, drop_callback, color_data=None, parent=None):
         super().__init__(parent)
         self.selected_row = None        
         self.headers = headers
         self.data = pd.DataFrame(columns=headers)
+        self.color_data = color_data  # added to store the color data
 
         self.original_palette = QPalette()
         self.original_palette.setColor(QPalette.Base, QColor("#FFFFFF"))
@@ -72,6 +73,10 @@ class BaseListWidget(QTableWidget):
         self.row_dropped.connect(lambda source_id, source_row, target_row: drop_callback(source_id, source_row, target_row))
         self.drag_start_pos = -1
         
+    def set_color_data(self, color_data):
+        self.color_data = color_data
+        self.update_widget()
+
     def update_widget(self):
         self.setRowCount(0)
         self.selected_row = None
@@ -93,6 +98,10 @@ class BaseListWidget(QTableWidget):
                 else:
                     item = QTableWidgetItem(str(value).replace("\n", ""))
                     item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                    if self.color_data is not None:
+                        color = self.color_data[i_row, i_col]
+                        if color != "":
+                            item.setBackground(QColor(color))
                     self.setItem(i_row, i_col, item)            
             self.resizeColumnsToContents()
             
@@ -113,6 +122,10 @@ class BaseListWidget(QTableWidget):
             else:
                 item = QTableWidgetItem(str(value).replace("\n", ""))
                 item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                if self.color_data is not None:
+                    color = self.color_data[i_row, i_col]
+                    if color != "":
+                        item.setBackground(QColor(color))
                 self.setItem(i_row, i_col, item)            
         self.resizeColumnsToContents()
 
@@ -206,8 +219,7 @@ class BaseListWidget(QTableWidget):
         row_data = self.data.iloc[row_index].tolist()  # Retrieve a row from the dataframe and convert to a list
         return row_data
 
-    def mousePressEvent(self, event):
-        
+    def mousePressEvent(self, event):        
         index = self.indexAt(event.pos())
         row = index.row() 
         col = index.column()

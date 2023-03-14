@@ -173,18 +173,6 @@ class BaseListWidget(QTableWidget):
 
                     if item is not None and row != self.hover_row:  # Add this condition
                         painter.drawText(self.visualRect(index), Qt.AlignVCenter | Qt.AlignLeft, item.text())
-
-        if self.hover_row >= 0:
-            for col in range(self.columnCount()):
-                rect = self.visualRect(self.model().index(self.hover_row, col))
-                if self.hover_row == self.selected_row:
-                    painter.fillRect(rect, QColor(selected_hover_color))
-                else:
-                    painter.fillRect(rect, QColor(hover_color))
-
-                text = self.model().data(self.model().index(self.hover_row, col))
-                painter.drawText(rect.translated(3, 0), Qt.AlignVCenter | Qt.AlignLeft, text)
-
             if self.hover_row >= 0:
                 for col in range(self.columnCount()):
                     rect = self.visualRect(self.model().index(self.hover_row, col))

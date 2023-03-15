@@ -58,11 +58,9 @@ class ListDataWidget(QWidget):
             self.base_list.removeRow(self.base_list.selected_row)
             self.base_list.data = self.base_list.data[:self.base_list.selected_row] + \
                 self.base_list.data[self.base_list.selected_row + 1:]
-            self.base_list.setRowCount(0)
-            self.selected_row = None
-            for row in self.base_list.data:
-                self.base_list.add_row(row.values())
-
+            self.base_list.selected_row = None
+            self.base_list.update()
+            
     def load_data_from_file(self, file_path, prompt=True):
         with open(file_path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t')

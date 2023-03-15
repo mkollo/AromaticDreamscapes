@@ -101,7 +101,7 @@ class BaseListWidget(QTableWidget):
                             item.setBackground(QColor(color))
                     self.setItem(i_row, i_col, item)            
             self.resizeColumnsToContents()
-            
+
     def add_row(self, row_data):
         self.data.loc[len(self.data)] = row_data
         self.data.reset_index()

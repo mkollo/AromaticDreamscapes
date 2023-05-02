@@ -31,7 +31,7 @@ class FlowDataView(QMainWindow):
         self.odour_chemicals = OdourChemicalWidget()
         self.odour_bottles = OdourBottleWidget(self.odour_chemicals)
         self.odour_sequences = SequenceWidget(self.odour_bottles, self.odour_chemicals)
-        self.protocols = ProtocolWidget(self.odour_sequences, self.odour_bottles, self.odour_chemicals)
+        self.protocols = ProtocolWidget(self.odour_sequences, self.odour_bottles, self.odour_chemicals, self.controller)
         main_frame = QFrame()
         layout = QGridLayout(main_frame)
         main_frame.setLayout(layout)

@@ -20,7 +20,7 @@ class SequenceWidget(ListDataWidget):
         self.map_file = "data/canberra_all_mds.csv"
 
         ignore_buttons = ["plus"]
-        headers = ["Name", "O1", "O2", "O3", "O4", "Reward?", "On?"]
+        headers = ["Name", "O1", "O2", "O3", "O4", "Reward?"]
         extra_buttons = [
             {'icon': 'optimumppm', 'callback': lambda: self.plot_ideal_ppm()}
         ]
@@ -30,7 +30,7 @@ class SequenceWidget(ListDataWidget):
         headers=headers, ignore_buttons=ignore_buttons,
         extra_buttons=extra_buttons)
 
-        self.sequences_file = "data/sequences.tsv"
+        self.sequences_file = "Z:\\COMPUTING\\OdorSeqPython\\sequences.tsv"
         self.load_data_from_file(self.sequences_file, prompt=False)        
         self.base_list.resizeColumnsToContents()
         self.base_list.update_widget()

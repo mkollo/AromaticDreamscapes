@@ -165,7 +165,7 @@ class BaseListWidget(QTableWidget):
                     self.style().drawControl(QStyle.CE_CheckBox, checkbox, painter, self)
                 else:                   
                     painter.setPen(Qt.black)
-                    painter.drawText(self.visualRect(index), Qt.AlignCenter, self.data.iloc[row, col])
+                    painter.drawText(self.visualRect(index), Qt.AlignCenter, str(self.data.iloc[row, col]))
               
                 
     def dragEnterEvent(self, event):
@@ -208,6 +208,7 @@ class BaseListWidget(QTableWidget):
     def select_row(self, row):
         self.selectRow(row)
         self.selected_row = row
+        self.update_widget()
 
     def remove_row_data(self, row):
         if row >= 0 and row < self.rowCount():

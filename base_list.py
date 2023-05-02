@@ -96,6 +96,8 @@ class BaseListWidget(QTableWidget):
                     item = QTableWidgetItem(str(self.data.iloc[i_row, i_col]).replace("\n", ""))
                     item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                     if self.color_data is not None:
+                        print(self.color_data)
+                        print(i_row, i_col)
                         try:
                             color = self.color_data[i_row, i_col]
                             if color != "":

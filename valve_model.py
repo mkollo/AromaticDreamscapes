@@ -41,8 +41,8 @@ class ValveModel:
         for k in range(len(odour_valves)):
             on_samples = int(self.cycle_samples * duty_cycles[k])
             pulse_pattern = np.concatenate(np.arange(0, self.pulse_samples, self.cycle_samples).reshape(-1, 1) + np.arange(on_samples))
-            valve_states[odour_valves[k] - 1, pulse_pattern + self.pre_sequence_samples + self.pulse_samples * k] = 0
-            valve_states[odour_valves[k] - 1 + 16, self.pre_sequence_samples + self.pulse_samples * k + self.back_valve_delay_samples: self.pre_sequence_samples + self.pulse_samples * (k + 1) - self.back_valve_delay_samples] = 1
+            valve_states[odour_valves[k], pulse_pattern + self.pre_sequence_samples + self.pulse_samples * k] = 0
+            valve_states[odour_valves[k] + 16, self.pre_sequence_samples + self.pulse_samples * k + self.back_valve_delay_samples: self.pre_sequence_samples + self.pulse_samples * (k + 1) - self.back_valve_delay_samples] = 1
             valve_states[clean_air_valves[k], pulse_pattern + self.pre_sequence_samples + self.pulse_samples * k] = 1
         # creating a binary code for the label
         bytes_array = np.frombuffer(label.encode(), dtype=np.uint8)

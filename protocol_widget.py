@@ -136,7 +136,7 @@ class ProtocolWidget(ListDataWidget):
             bottle_chemicals = self.odour_bottle_widget.get_chemicals(bottle_row)
             chemical_data = self.chemical_widget.get_chemical_data(bottle_chemicals)
             sat_ppms = np.array([float(d["Saturated_ppm"]) for d in chemical_data])
-            duty_cycles.append(np.clip(self.target_ppm / np.mean(sat_ppms), 0.05, 1))
+            duty_cycles.append(np.clip(self.target_ppm / np.mean(sat_ppms), 0.05, 1))            
         return str(duty_cycles)
             
 
@@ -157,10 +157,11 @@ class RunSequenceThread(QThread):
                 break            
             bottle_names = row[["O1", "O2", "O3", "O4"]].values
             odour_valves = [np.where(self.bottle_data["Name"] == bottle_name)[0][0]+1 for bottle_name in bottle_names]
-            duty_cycles = row["Duty cycles"]
+            duty_cycles = row["Duty cycles"]            
             duty_cycles = duty_cycles.replace("[", "").replace("]", "")
             duty_cycles = duty_cycles.split(", ")
             duty_cycles = [float(x) for x in duty_cycles]
+            # duty_cycles = [0.5] * len(duty_cycles)
             label = row["Name"]
             self.controller.play_valve_sequence(odour_valves, duty_cycles, label)                        
             self.update_row_signal.emit(index)

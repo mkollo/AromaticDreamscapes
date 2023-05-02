@@ -96,8 +96,6 @@ class BaseListWidget(QTableWidget):
                     item = QTableWidgetItem(str(self.data.iloc[i_row, i_col]).replace("\n", ""))
                     item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                     if self.color_data is not None:
-                        print(self.color_data)
-                        print(i_row, i_col)
                         try:
                             color = self.color_data[i_row, i_col]
                             if color != "":
@@ -108,7 +106,7 @@ class BaseListWidget(QTableWidget):
             self.resizeColumnsToContents()
 
     def add_row(self, row_data):
-        self.data.loc[len(self.data)] = row_data
+        self.data.loc[len(self.data)] = row_data        
         self.data.reset_index()
         i_row = self.rowCount()
         self.insertRow(i_row)
@@ -142,7 +140,7 @@ class BaseListWidget(QTableWidget):
             for row in range(self.rowCount()):
                 index = self.model().index(row, col)
                 if self.color_data is not None:
-                    try:                   
+                    try:
                         color = self.color_data[row, col]
                         if color == "":
                             if self.hover_row == row:
@@ -152,7 +150,7 @@ class BaseListWidget(QTableWidget):
                             else:
                                 color = "#FFFFFF"            
                     except:
-                        pass
+                        color = "#FFFFFF"
                     painter.setBrush(QBrush(QColor(color)))
                     painter.setPen(Qt.NoPen)
                     painter.drawRect(self.visualRect(index))

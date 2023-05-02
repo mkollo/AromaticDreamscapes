@@ -2,6 +2,7 @@ import csv
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QMessageBox
 from base_list import BaseListWidget
+import pandas as pd
 
 def no_action(self):
     pass
@@ -56,10 +57,10 @@ class ListDataWidget(QWidget):
             self, 'Remove row', 'Are you sure you want remove this row?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.base_list.removeRow(self.base_list.selected_row)
-            if self.base_list.data.shape[0]>1:
+            try:
                 self.base_list.data.drop(self.base_list.selected_row, inplace=True, axis=0)
-            else:
-                self.base_list.data = self.base_list.data.iloc[0:0]
+            except:
+                self.base_list.data = pd.DataFrame(columns = self.base_list.data.columns)
             self.base_list.selected_row = None
             self.base_list.update()
 

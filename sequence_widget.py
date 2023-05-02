@@ -66,7 +66,7 @@ class SequenceWidget(ListDataWidget):
         for i in range(1, 5):
             if self.base_list.data.iloc[row, i] == "":
                 return i
-        return -1
+        return 0
 
     def add_bottle(self, source_row, target_row):
         col = self.get_last_emtpy_slot(target_row)

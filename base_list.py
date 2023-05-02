@@ -96,9 +96,12 @@ class BaseListWidget(QTableWidget):
                     item = QTableWidgetItem(str(self.data.iloc[i_row, i_col]).replace("\n", ""))
                     item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                     if self.color_data is not None:
-                        color = self.color_data[i_row, i_col]
-                        if color != "":
-                            item.setBackground(QColor(color))
+                        try:
+                            color = self.color_data[i_row, i_col]
+                            if color != "":
+                                item.setBackground(QColor(color))
+                        except:
+                            pass
                     self.setItem(i_row, i_col, item)            
             self.resizeColumnsToContents()
 
@@ -121,9 +124,12 @@ class BaseListWidget(QTableWidget):
                 item = QTableWidgetItem(str(value).replace("\n", ""))
                 item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                 if self.color_data is not None:
-                    color = self.color_data[i_row, i_col]
-                    if color != "":
-                        item.setBackground(QColor(color))
+                    try:
+                        color = self.color_data[i_row, i_col]
+                        if color != "":
+                            item.setBackground(QColor(color))
+                    except:
+                        pass
                 self.setItem(i_row, i_col, item)            
         self.resizeColumnsToContents()
 
@@ -133,15 +139,18 @@ class BaseListWidget(QTableWidget):
         for col in range(self.columnCount()):
             for row in range(self.rowCount()):
                 index = self.model().index(row, col)
-                if self.color_data is not None:                                        
-                    color = self.color_data[row, col]
-                    if color == "":
-                        if self.hover_row == row:
-                            color = hover_color if self.selected_row != row else selected_hover_color
-                        elif self.selected_row == row:
-                            color = selected_color
-                        else:
-                            color = "#FFFFFF"            
+                if self.color_data is not None:
+                    try:                   
+                        color = self.color_data[row, col]
+                        if color == "":
+                            if self.hover_row == row:
+                                color = hover_color if self.selected_row != row else selected_hover_color
+                            elif self.selected_row == row:
+                                color = selected_color
+                            else:
+                                color = "#FFFFFF"            
+                    except:
+                        pass
                     painter.setBrush(QBrush(QColor(color)))
                     painter.setPen(Qt.NoPen)
                     painter.drawRect(self.visualRect(index))

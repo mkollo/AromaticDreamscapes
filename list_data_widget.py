@@ -51,15 +51,21 @@ class ListDataWidget(QWidget):
     def add_data_row(self):
         pass
 
-    def remove_data_row(self):        
+    def remove_data_row(self):
         reply = QMessageBox.question(
             self, 'Remove row', 'Are you sure you want remove this row?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
+            print(self.base_list.selected_row)
+            print(self.base_list.data)
             self.base_list.removeRow(self.base_list.selected_row)
-            self.base_list.data = self.base_list.data[:self.base_list.selected_row] + \
-                self.base_list.data[self.base_list.selected_row + 1:]
+            if self.base_list.data.shape[0]>1:
+                self.base_list.data.drop(self.base_list.selected_row, inplace=True, axis=0)
+            else:
+                self.base_list.data = self.base_list.data.iloc[0:0]
+            print(self.base_list.data)
             self.base_list.selected_row = None
             self.base_list.update()
+
             
     def load_data_from_file(self, file_path, prompt=True):
         with open(file_path, 'r') as f:

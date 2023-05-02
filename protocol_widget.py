@@ -11,7 +11,8 @@ from sequence_widget import SequenceWidget
 from random import shuffle
 
 class ProtocolWidget(ListDataWidget):
-    def __init__(self, sequence_widget:SequenceWidget, odour_bottle_widget: OdourBottleWidget, chemical_widget: OdourBottleWidget, controller=OdourSeqController):
+    def __init__(self, sequence_widget:SequenceWidget, odour_bottle_widget: OdourBottleWidget, chemical_widget: OdourBottleWidget, controller=OdourSeqController, interval_time=3):
+        self.interval_time = interval_time
         self.sequence_widget = sequence_widget
         self.odour_bottle_widget = odour_bottle_widget
         self.chemical_widget = chemical_widget
@@ -106,7 +107,7 @@ class ProtocolWidget(ListDataWidget):
     def run_protocol(self):
         if (self.base_list.selected_row is None) or (self.base_list.selected_row < 0):
             self.base_list.select_row(0)
-        self.run_sequence_thread = RunSequenceThread(self.controller, self.base_list.data, self.odour_bottle_widget.base_list.data)
+        self.run_sequence_thread = RunSequenceThread(self.controller, self.base_list.data, self.odour_bottle_widget.base_list.data, self.interval_time)
         self.run_sequence_thread.update_row_signal.connect(self.base_list.select_row)
         self.run_sequence_thread.start()
         self.run_protocol_button.setStyleSheet("background-color: darkgreen")
@@ -142,11 +143,12 @@ class ProtocolWidget(ListDataWidget):
 class RunSequenceThread(QThread):
     update_row_signal = pyqtSignal(int)
 
-    def __init__(self, controller, base_list_data, bottle_data):
-        super().__init__()
+    def __init__(self, controller, base_list_data, bottle_data, interval_time):        
+        super().__init__()        
         self.controller = controller
         self.base_list_data = base_list_data
         self.bottle_data = bottle_data
+        self.interval_time = interval_time
         self.running = True
 
     def run(self):
@@ -162,7 +164,7 @@ class RunSequenceThread(QThread):
             label = row["Name"]
             self.controller.play_valve_sequence(odour_valves, duty_cycles, label)                        
             self.update_row_signal.emit(index)
-            self.sleep(20)
+            self.sleep(self.interval_time)
 
     def stop(self):
         self.running = False

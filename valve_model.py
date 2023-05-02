@@ -4,9 +4,10 @@ import numpy as np
 import time
 
 class ValveModel:
-    def __init__(self, sample_rate=10000, acquisition_time=5, pre_sequence_time=0.5, post_sequence_time=0.5, pulse_time=1, back_valve_delay=0.05):        
+    def __init__(self, sample_rate=10000, acquisition_time=5, pre_sequence_time=0.5, post_sequence_time=0.5, pulse_time=1, back_valve_delay=0.05, interval_time=3):   
         self.sample_rate = sample_rate
         self.acquisition_samples = int(acquisition_time * self.sample_rate)
+        self.interval_time = interval_time
         self.back_valve_delay_samples = int(back_valve_delay * self.sample_rate)
         self.pre_sequence_samples = int(pre_sequence_time * self.sample_rate)
         self.post_sequence_samles = int(post_sequence_time * self.sample_rate)
@@ -14,20 +15,12 @@ class ValveModel:
         self.cycle_samples = int(0.004 * self.sample_rate)
         self.ttl_bit_samples = int(0.004 * self.sample_rate)
         self.all_clean_air_valves = [0, 1, 8, 9]
-        # self.all_clean_air_valves = [0]
-
         self.valves = nidaqmx.Task()
         self.ai = nidaqmx.Task()
-
         self.valves.do_channels.add_do_chan("Front_valves/port0/line0:15, Back_valves/port0/line0:7, Back_valves/port0/line16:23, Front_valves/port0/line16", line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
         self.ai.ai_channels.add_ai_voltage_chan("AI/ai0, AI/ai1, AI/ai2")
-
         self.init_clock_and_trigger(self.valves)
         self.init_clock_and_trigger(self.ai)
-        # while True:
-        #     self.play_valve_sequence([12, 12, 12, 12], [0.5, 0.25, 0.8, 0.1], "Test")
-        #     time.sleep(60)
-
 
     def __del__(self):
         self.valves.close()
@@ -41,6 +34,7 @@ class ValveModel:
         return {k: (k > 8) * k // 8 * 8 + 1 - k % 2 for k in list(range(2, 8)) + list(range(10, 16))}.get(odour_valve)
 
     def generate_valve_pattern(self, odour_valves, duty_cycles, label=""):
+        duty_cycles = [1, 1, 1, 1]
         valve_states = np.vstack([np.ones((16, self.acquisition_samples), dtype=int), np.zeros((16, self.acquisition_samples), dtype=int), np.ones((1, self.acquisition_samples), dtype=int)])
         clean_air_valves = [self.determine_clean_air_valve(odour_valve - 1) for odour_valve in odour_valves]
         valve_states[self.all_clean_air_valves, :] = 0
@@ -60,7 +54,7 @@ class ValveModel:
         valve_states[32, ttl_pattern] = 0
         return valve_states.astype(bool)
 
-    def play_valve_sequence(self, odour_valves, duty_cycles, label):
+    def play_valve_sequence(self, odour_valves, duty_cycles, label):        
         valve_states = self.generate_valve_pattern(odour_valves, duty_cycles, label=label)
         self.valves.write(valve_states)
         self.valves.start()

@@ -5,7 +5,7 @@ import numpy as np
 import time
 
 class ValveModel:
-    def __init__(self, sample_rate=10000, acquisition_time=5, pre_sequence_time=0.5, post_sequence_time=0.5, pulse_time=1, back_valve_delay=0.05, interval_time=3):   
+    def __init__(self, sample_rate=10000, acquisition_time=5, pre_sequence_time=0.5, post_sequence_time=0.5, pulse_time=1, back_valve_delay=0.05, interval_time=25):   
         self.sample_rate = sample_rate
         self.acquisition_samples = int(acquisition_time * self.sample_rate)
         self.interval_time = interval_time

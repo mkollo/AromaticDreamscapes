@@ -161,7 +161,6 @@ class RunSequenceThread(QThread):
             duty_cycles = duty_cycles.replace("[", "").replace("]", "")
             duty_cycles = duty_cycles.split(", ")
             duty_cycles = [float(x) for x in duty_cycles]
-            # duty_cycles = [0.5] * len(duty_cycles)
             label = row["Name"]
             self.controller.play_valve_sequence(odour_valves, duty_cycles, label)                        
             self.update_row_signal.emit(index)
